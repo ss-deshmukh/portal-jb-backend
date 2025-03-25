@@ -1,13 +1,24 @@
 {
   "name": "portal-jb-backend",
   "version": "1.0.0",
-  "description": "Backend API for Portal JB",
+  "description": "Backend service for Portal JB platform",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "test": "jest",
-    "test:api": "node src/scripts/testApi.js"
+    "start": "cross-env NODE_ENV=production node src/server.js",
+    "dev": "cross-env NODE_ENV=development nodemon src/server.js",
+    "prod": "cross-env NODE_ENV=production node src/server.js",
+    "test": "cross-env NODE_ENV=test jest",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage",
+    "test:api": "cross-env NODE_ENV=test node src/scripts/testApi.js",
+    "test:integration": "cross-env NODE_ENV=production ALLOW_PRODUCTION_TESTS=true node src/scripts/runIntegrationTests.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "build": "echo 'No build step required'",
+    "postinstall": "echo 'No postinstall step required'"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "dependencies": {
     "axios": "^1.8.4",
@@ -26,6 +37,7 @@
     "xss-clean": "^0.1.1"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "jest": "^29.5.0",
     "nodemon": "^2.0.22"
   }

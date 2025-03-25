@@ -1,0 +1,107 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": ["basicInfo"],
+    "properties": {
+      "basicInfo": {
+        "bsonType": "object",
+        "required": ["email", "displayName", "joinDate"],
+        "properties": {
+          "email": { "bsonType": "string" },
+          "displayName": { "bsonType": "string" },
+          "bio": { "bsonType": "string" },
+          "profileImage": { "bsonType": "string" },
+          "joinDate": { "bsonType": "string" },
+          "walletAddress": { "bsonType": "string" },
+          "website": { "bsonType": "string" },
+          "x": { "bsonType": "string" },
+          "discord": { "bsonType": "string" },
+          "telegram": { "bsonType": "string" }
+        }
+      },
+      "contactPreferences": {
+        "bsonType": "object",
+        "properties": {
+          "emailNotifications": { "bsonType": "bool" },
+          "newsletterSubscription": {
+            "bsonType": "object",
+            "properties": {
+              "subscribed": { "bsonType": "bool" },
+              "interests": { "bsonType": "array", "items": { "bsonType": "string" } }
+            }
+          },
+          "canBeContactedBySponsors": { "bsonType": "bool" }
+        }
+      },
+      "preferences": {
+        "bsonType": "object",
+        "properties": {
+          "interfaceSettings": {
+            "bsonType": "object",
+            "properties": {
+              "theme": { "bsonType": "string" },
+              "language": { "bsonType": "string" }
+            }
+          },
+          "opportunityPreferences": {
+            "bsonType": "object",
+            "properties": {
+              "preferredCategories": { "bsonType": "array", "items": { "bsonType": "string" } },
+              "minimumReward": { "bsonType": "number" },
+              "preferredDifficulty": { "bsonType": "string" },
+              "timeCommitment": { "bsonType": "string" }
+            }
+          },
+          "privacySettings": {
+            "bsonType": "object",
+            "properties": {
+              "profileVisibility": { "bsonType": "string" },
+              "submissionVisibility": { "bsonType": "string" },
+              "skillsVisibility": { "bsonType": "string" },
+              "reputationVisibility": { "bsonType": "string" },
+              "contactabilityBySponsors": { "bsonType": "string" }
+            }
+          }
+        }
+      },
+      "skills": {
+        "bsonType": "object",
+        "properties": {
+          "primarySkills": { "bsonType": "array", "items": { "bsonType": "object" } },
+          "secondarySkills": { "bsonType": "array", "items": { "bsonType": "object" } },
+          "skillTrajectory": {
+            "bsonType": "object",
+            "properties": {
+              "improvementRate": { "bsonType": "number" },
+              "consistencyScore": { "bsonType": "number" }
+            }
+          }
+        }
+      },
+      "reputation": {
+        "bsonType": "object",
+        "properties": {
+          "overallScore": { "bsonType": "number" },
+          "metrics": {
+            "bsonType": "object",
+            "properties": {
+              "taskCompletionRate": { "bsonType": "number" },
+              "qualityScore": { "bsonType": "number" },
+              "consistencyScore": { "bsonType": "number" },
+              "communityContributions": { "bsonType": "number" }
+            }
+          }
+        }
+      },
+      "contributionStats": {
+        "bsonType": "object",
+        "properties": {
+          "totalTasksCompleted": { "bsonType": "number" },
+          "totalRewardsEarned": { "bsonType": "number" },
+          "averageQualityRating": { "bsonType": "number" }
+        }
+      },
+      "taskIds": { "bsonType": "array", "items": { "bsonType": "string" } }
+    }
+  }
+}

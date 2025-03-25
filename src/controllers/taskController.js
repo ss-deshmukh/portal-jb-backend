@@ -110,4 +110,35 @@ exports.deleteTask = async (req, res, next) => {
     logger.error('Error deleting task:', error);
     next(error);
   }
+};
+
+// Update a task
+exports.updateTask = async (req, res, next) => {
+  try {
+    const { task } = req.body;
+
+    // Log the update request
+    logger.info('Updating task:', task.id);
+
+    // Find and update task
+    const updatedTask = await Task.findOneAndUpdate(
+      { id: task.id },
+      { $set: task },
+      { new: true }
+    );
+
+    if (!updatedTask) {
+      throw new NotFoundError('Task');
+    }
+
+    logger.info('Task updated successfully:', task.id);
+
+    res.json({
+      message: 'Task updated successfully',
+      task: updatedTask
+    });
+  } catch (error) {
+    logger.error('Error updating task:', error);
+    next(error);
+  }
 }; 

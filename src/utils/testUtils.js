@@ -2,7 +2,7 @@ const axios = require('axios');
 const logger = require('./logger');
 
 // Base URL for the API
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:5001/api';
 
 // Test data
 const testData = {
@@ -12,10 +12,11 @@ const testData = {
         email: 'test@example.com',
         displayName: 'Test Contributor',
         bio: 'Test bio',
-        walletAddress: '0x1234567890123456789012345678901234567890',
+        walletAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CERvfJmcNSUKcBdUjcMVT', // Valid Polkadot address
         website: 'https://github.com/test',
         x: 'https://twitter.com/test',
-        telegram: 'https://t.me/test'
+        telegram: 'https://t.me/test',
+        joinDate: new Date().toISOString() // Add join date
       },
       skills: {
         primarySkills: [
@@ -37,7 +38,7 @@ const testData = {
   sponsor: {
     register: {
       profile: {
-        walletAddress: '0x9876543210987654321098765432109876543210',
+        walletAddress: '1xN1QjpCiNSPfSoqZAbL33RxbsCcskASzYNs3GBs1h8dc7f', // Valid Polkadot address
         name: 'Test Sponsor',
         logo: 'https://example.com/logo.png',
         description: 'Test sponsor description',
@@ -46,7 +47,7 @@ const testData = {
       }
     },
     login: {
-      wallet: '0x9876543210987654321098765432109876543210'
+      wallet: '1xN1QjpCiNSPfSoqZAbL33RxbsCcskASzYNs3GBs1h8dc7f' // Same as register wallet
     }
   },
   task: {
@@ -58,9 +59,12 @@ const testData = {
         description: 'Test task description',
         requirements: ['Requirement 1', 'Requirement 2'],
         deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+        postedTime: new Date().toISOString(), // Add posted time
+        status: 'open', // Add status
         reward: 100,
+        maxAccepted: 1, // Add max accepted value
         priority: 'high',
-        category: 'development',
+        category: ['development'],
         skills: ['JavaScript', 'Node.js']
       }
     }
@@ -83,7 +87,8 @@ const testData = {
         status: 'pending',
         description: 'Test submission description',
         links: ['https://github.com/test/repo'],
-        walletAddress: '0x1234567890123456789012345678901234567890' // Using the same wallet address as the contributor
+        walletAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CERvfJmcNSUKcBdUjcMVT', // Using the same wallet address as the contributor
+        submissions: ['https://github.com/test/repo/pull/1'] // Add submissions array
       }
     }
   }

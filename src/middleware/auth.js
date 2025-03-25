@@ -1,66 +1,26 @@
 /**
  * Authentication Middleware
  * 
- * This is a placeholder authentication middleware that will be updated with proper authentication logic.
- * Future implementation will include:
- * 1. JWT token validation
- * 2. Role-based access control (RBAC)
- * 3. Rate limiting
- * 4. IP-based restrictions
- * 5. Session management
+ * This is a simple token-based authentication middleware.
+ * The token is expected to be the sponsor's MongoDB _id.
+ * This is for testing purposes only and should be replaced with proper JWT authentication in production.
  */
 
 const auth = async (req, res, next) => {
   try {
-    // TODO: Extract token from Authorization header
-    // const token = req.headers.authorization?.split(' ')[1];
+    // Get token from Authorization header
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    // Add user ID to request object
+    req.user = token;
     
-    // TODO: Validate JWT token
-    // const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-    
-    // TODO: Check if user exists in database
-    // const user = await User.findById(decoded.userId);
-    // if (!user) {
-    //   return res.status(401).json({ message: 'User not found' });
-    // }
-    
-    // TODO: Check user's role and permissions
-    // if (!user.hasPermission(req.path)) {
-    //   return res.status(403).json({ message: 'Insufficient permissions' });
-    // }
-    
-    // TODO: Rate limiting check
-    // const rateLimit = await checkRateLimit(req.ip);
-    // if (!rateLimit.allowed) {
-    //   return res.status(429).json({ message: 'Too many requests' });
-    // }
-    
-    // TODO: IP-based restrictions
-    // if (!isAllowedIP(req.ip)) {
-    //   return res.status(403).json({ message: 'IP not allowed' });
-    // }
-    
-    // TODO: Session validation
-    // const session = await validateSession(req.session);
-    // if (!session.valid) {
-    //   return res.status(401).json({ message: 'Invalid session' });
-    // }
-    
-    // TODO: Add user info to request object
-    // req.user = user;
-    // req.userRole = user.role;
-    // req.userPermissions = user.permissions;
-    
-    // For now, just pass through
     next();
   } catch (error) {
-    // TODO: Implement proper error handling
-    // - Token validation errors
-    // - Rate limit errors
-    // - Session errors
-    // - Permission errors
     console.error('Authentication error:', error);
-    next(error);
+    res.status(401).json({ message: 'Authentication failed' });
   }
 };
 

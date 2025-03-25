@@ -1,0 +1,14 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": ["id", "taskId", "walletAddress", "submissions"],
+    "properties": {
+      "id": { "bsonType": "string" },
+      "taskId": { "bsonType": "string" },
+      "walletAddress": { "bsonType": "string" },
+      "submissions": { "bsonType": "array", "items": { "bsonType": "string" } },
+      "grading": { "bsonType": ["int", "null"] },
+      "isAccepted": { "bsonType": "bool" }
+    }
+  }
+}

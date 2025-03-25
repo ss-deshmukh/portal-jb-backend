@@ -10,12 +10,13 @@ const hpp = require('hpp');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 
 // Load environment variables
 dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGODB_URI', 'PORT', 'NODE_ENV'];
+const requiredEnvVars = ['MONGO_URI_DEV', 'MONGO_URI_PROD', 'PORT', 'NODE_ENV'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
@@ -45,9 +46,19 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir);
 }
 
+// Log startup information
+logger.info('Starting Portal JB Backend...');
+logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+logger.info(`Port: ${process.env.PORT || 5000}`);
+
 // Security middleware
 app.use(helmet()); // Set security HTTP headers
-app.use(cors()); // Enable CORS
+app.use(cors({
+  origin: process.env.NODE_ENV === 'development' 
+    ? true // Allow all origins in development
+    : process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  credentials: true
+})); // Enable CORS
 app.use(express.json({ limit: '10kb' })); // Body parser with size limit
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
@@ -60,13 +71,42 @@ app.use(xss());
 // Prevent parameter pollution
 app.use(hpp());
 
-// Rate limiting
-const limiter = rateLimit({
-  max: 100, // Limit each IP to 100 requests per windowMs
-  windowMs: 60 * 60 * 1000, // 1 hour
-  message: 'Too many requests from this IP, please try again in an hour!'
-});
-app.use('/api/', limiter);
+// Rate limiting configuration
+const createRateLimiter = (windowMs, max, message) => {
+  return rateLimit({
+    windowMs,
+    max,
+    message: {
+      status: 'error',
+      message: message
+    },
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    skipSuccessfulRequests: true, // Don't count successful requests against the limit
+    keyGenerator: (req) => {
+      // Use IP + user agent as the key to better identify unique users
+      return `${req.ip}-${req.headers['user-agent']}`;
+    }
+  });
+};
+
+// Different rate limits for different endpoints
+const authLimiter = createRateLimiter(
+  15 * 60 * 1000, // 15 minutes
+  5, // 5 attempts
+  'Too many login attempts. Please try again later.'
+);
+
+const apiLimiter = createRateLimiter(
+  60 * 1000, // 1 minute
+  100, // 100 requests per minute
+  'Too many requests. Please try again later.'
+);
+
+// Apply rate limiting to specific routes
+app.use('/api/contributor/login', authLimiter);
+app.use('/api/sponsor/login', authLimiter);
+app.use('/api', apiLimiter);
 
 // Compression middleware
 app.use(compression());
@@ -121,6 +161,23 @@ app.get('/api/tasks', auth, hasPermission('read:tasks'), (req, res) => {
   res.json({ message: 'This is a tasks route requiring read permission' });
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const health = {
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      host: mongoose.connection.host,
+      database: mongoose.connection.name
+    },
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  };
+
+  res.json(health);
+});
+
 // 404 handler
 app.use((req, res, next) => {
   logger.warn(`404 Not Found: ${req.method} ${req.url}`);
@@ -157,17 +214,21 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-// Handle server shutdown gracefully
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Shutting down gracefully...');
-  server.close(() => {
-    logger.info('Process terminated!');
+// Start server only if this file is run directly
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  const server = app.listen(PORT, () => {
+    logger.info(`Server is running on port ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
-}); 
+
+  // Handle server shutdown gracefully
+  process.on('SIGTERM', () => {
+    logger.info('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+      logger.info('Process terminated!');
+    });
+  });
+}
+
+module.exports = app; 

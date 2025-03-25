@@ -6,7 +6,7 @@ const contributorSchema = new mongoose.Schema({
     displayName: { type: String, required: true },
     bio: { type: String, default: '' },
     profileImage: { type: String, default: '' },
-    joinDate: { type: Date, default: Date.now },
+    joinDate: { type: String, default: () => new Date().toISOString() },
     walletAddress: { type: String, default: '' },
     website: { type: String, default: '' },
     x: { type: String, default: '' },
@@ -76,7 +76,8 @@ const contributorSchema = new mongoose.Schema({
   },
   taskIds: [{ type: String }]
 }, {
-  timestamps: true
+  timestamps: true,
+  strict: false // Allow additional fields
 });
 
 // Indexes

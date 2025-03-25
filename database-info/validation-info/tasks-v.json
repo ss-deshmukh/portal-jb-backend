@@ -1,0 +1,23 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": ["id", "title", "sponsorId", "description", "deadline", "postedTime", "status"],
+    "properties": {
+      "id": { "bsonType": "string" },
+      "title": { "bsonType": "string" },
+      "sponsorId": { "bsonType": "string" },
+      "logo": { "bsonType": "string" },
+      "description": { "bsonType": "string" },
+      "requirements": { "bsonType": "array", "items": { "bsonType": "string" } },
+      "deadline": { "bsonType": "string" },
+      "reward": { "bsonType": "number" },
+      "postedTime": { "bsonType": "string" },
+      "status": { "bsonType": "string" },
+      "priority": { "bsonType": "string" },
+      "category": { "bsonType": "array", "items": { "bsonType": "string" } },
+      "skills": { "bsonType": "array", "items": { "bsonType": "string" } },
+      "maxAccepted": { "bsonType": "int" },
+      "submissions": { "bsonType": "array", "items": { "bsonType": "string" } }
+    }
+  }
+}

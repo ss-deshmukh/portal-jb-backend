@@ -7,13 +7,13 @@ const taskSchema = new mongoose.Schema({
   logo: { type: String, required: true },
   description: { type: String, required: true },
   requirements: [{ type: String }],
-  deadline: { type: Date, required: true },
+  deadline: { type: String, required: true },
   reward: { type: Number, required: true },
-  postedTime: { type: Date, default: Date.now },
+  postedTime: { type: String, required: true },
   status: { 
     type: String, 
     enum: ['open', 'completed', 'cancelled'],
-    default: 'open'
+    required: true
   },
   priority: { 
     type: String, 
@@ -22,6 +22,7 @@ const taskSchema = new mongoose.Schema({
   },
   category: [{ type: String }],
   skills: [{ type: String }],
+  maxAccepted: { type: Number, required: true },
   submissions: [{ type: String }]
 }, {
   timestamps: true

@@ -112,13 +112,13 @@ const runTests = async () => {
   
   try {
     // Validate required environment variables
-    if (!process.env.MONGODB_URI) {
-      throw new Error('MONGODB_URI environment variable is required');
+    if (!process.env.MONGO_URI_DEV) {
+      throw new Error('MONGO_URI_DEV environment variable is required');
     }
 
     // Connect to database
     logger.info('Connecting to database...');
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGO_URI_DEV);
     logger.info('Connected to database');
 
     // Clean up test data
@@ -130,7 +130,7 @@ const runTests = async () => {
     
     // Wait for server to be ready
     logger.info('Waiting for server to be ready...');
-    await waitForServer(3000);
+    await waitForServer(5001);
     
     // Run tests
     logger.info('Running API tests...');

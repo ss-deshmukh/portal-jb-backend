@@ -10,6 +10,9 @@ router.use(auth);
 // Create a new skill
 router.post('/create', skillValidation, skillController.createSkill);
 
+// Get a skill by ID
+router.get('/:id', skillController.getSkill);
+
 // Update a skill
 router.put('/', skillUpdateValidation, skillController.updateSkill);
 

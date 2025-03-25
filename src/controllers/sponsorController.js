@@ -6,13 +6,6 @@ exports.register = async (req, res) => {
   try {
     const { profile } = req.body;
 
-    // Validate wallet address
-    if (!profile.walletAddress || !validateWalletAddress(profile.walletAddress)) {
-      return res.status(400).json({
-        message: 'Invalid wallet address format'
-      });
-    }
-
     // Check if sponsor already exists
     const existingSponsor = await Sponsor.findOne({ walletAddress: profile.walletAddress });
     if (existingSponsor) {
@@ -24,7 +17,7 @@ exports.register = async (req, res) => {
     // Create new sponsor
     const sponsor = new Sponsor({
       ...profile,
-      registeredAt: new Date()
+      registeredAt: new Date().toISOString()
     });
 
     await sponsor.save();
@@ -65,7 +58,8 @@ exports.login = async (req, res) => {
     // TODO: Implement proper authentication (JWT, session, etc.)
     res.json({
       message: 'Login successful',
-      sponsor
+      sponsor,
+      token: sponsor._id // Using _id as token for testing
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -76,20 +70,37 @@ exports.login = async (req, res) => {
   }
 };
 
-// Update sponsor profile
-exports.updateProfile = async (req, res) => {
+// Get sponsor profile
+exports.getProfile = async (req, res) => {
   try {
-    const { wallet, updated } = req.body;
-
-    // Validate wallet address
-    if (!wallet || !validateWalletAddress(wallet)) {
-      return res.status(400).json({
-        message: 'Invalid wallet address format'
+    // Find sponsor by ID from auth middleware
+    const sponsor = await Sponsor.findById(req.user);
+    if (!sponsor) {
+      return res.status(404).json({
+        message: 'Sponsor not found'
       });
     }
 
-    // Find sponsor
-    const sponsor = await Sponsor.findOne({ walletAddress: wallet });
+    res.json({
+      message: 'Profile retrieved successfully',
+      profile: sponsor
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      message: 'Error retrieving profile',
+      error: error.message
+    });
+  }
+};
+
+// Update sponsor profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const { updated } = req.body;
+
+    // Find sponsor by ID from auth middleware
+    const sponsor = await Sponsor.findById(req.user);
     if (!sponsor) {
       return res.status(404).json({
         message: 'Sponsor not found'
@@ -98,7 +109,7 @@ exports.updateProfile = async (req, res) => {
 
     // Update fields
     Object.keys(updated).forEach(key => {
-      if (key !== 'walletAddress' && key !== 'registeredAt') {
+      if (key !== 'registeredAt') {
         sponsor[key] = updated[key];
       }
     });
@@ -107,7 +118,7 @@ exports.updateProfile = async (req, res) => {
 
     res.json({
       message: 'Profile updated successfully',
-      sponsor
+      profile: sponsor
     });
   } catch (error) {
     console.error('Update error:', error);
@@ -121,17 +132,8 @@ exports.updateProfile = async (req, res) => {
 // Delete sponsor
 exports.deleteProfile = async (req, res) => {
   try {
-    const { wallet } = req.body;
-
-    // Validate wallet address
-    if (!wallet || !validateWalletAddress(wallet)) {
-      return res.status(400).json({
-        message: 'Invalid wallet address format'
-      });
-    }
-
-    // Find and delete sponsor
-    const sponsor = await Sponsor.findOneAndDelete({ walletAddress: wallet });
+    // Find and delete sponsor by ID from auth middleware
+    const sponsor = await Sponsor.findByIdAndDelete(req.user);
     if (!sponsor) {
       return res.status(404).json({
         message: 'Sponsor not found'

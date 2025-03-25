@@ -29,7 +29,12 @@ exports.createSubmission = async (req, res, next) => {
     // Create new submission
     const newSubmission = new Submission({
       id: submissionId,
-      ...submission,
+      taskId: submission.taskId,
+      contributorId: submission.contributorId,
+      walletAddress: submission.walletAddress,
+      submissions: submission.submissions,
+      grading: submission.grading || 0,
+      isAccepted: submission.isAccepted || false,
       submittedAt: new Date()
     });
 
@@ -89,24 +94,22 @@ exports.deleteSubmission = async (req, res, next) => {
 // Fetch submissions
 exports.fetchSubmissions = async (req, res, next) => {
   try {
-    const { ids } = req.body;
+    const { taskId, contributorId, walletAddress } = req.query;
 
     // Log the fetch request
-    logger.info('Fetching submissions with IDs:', ids);
+    logger.info('Fetching submissions with query:', { taskId, contributorId, walletAddress });
 
-    if (!Array.isArray(ids) || ids.length === 0) {
-      throw new ValidationError('Valid submission IDs array is required');
-    }
+    // Build query
+    const query = {};
+    if (taskId) query.taskId = taskId;
+    if (contributorId) query.contributorId = contributorId;
+    if (walletAddress) query.walletAddress = walletAddress;
 
-    const submissions = await Submission.find({ id: { $in: ids } });
-    
-    if (submissions.length === 0) {
-      throw new NotFoundError('Submission');
-    }
-
-    logger.info(`Found ${submissions.length} submissions`);
+    // Find submissions
+    const submissions = await Submission.find(query);
 
     res.json({
+      message: 'Submissions retrieved successfully',
       submissions
     });
   } catch (error) {

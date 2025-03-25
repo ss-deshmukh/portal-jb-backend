@@ -9,7 +9,8 @@ router.post('/register', contributorValidation, contributorController.register);
 router.post('/login', contributorController.login);
 
 // Protected routes
-router.put('/', auth, contributorValidation, contributorController.updateProfile);
-router.delete('/', auth, contributorController.deleteProfile);
+router.get('/profile', auth, contributorController.getProfile);
+router.put('/profile', auth, contributorValidation, contributorController.updateProfile);
+router.delete('/profile', auth, contributorController.deleteProfile);
 
 module.exports = router; 

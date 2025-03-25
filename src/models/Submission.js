@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const submissionSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   taskId: { type: String, required: true },
+  contributorId: { type: String, required: true },
   walletAddress: { type: String, required: true },
   submissions: [{ type: String, required: true }],
   grading: { 
@@ -19,6 +20,7 @@ const submissionSchema = new mongoose.Schema({
 // Indexes
 submissionSchema.index({ id: 1 });
 submissionSchema.index({ taskId: 1 });
+submissionSchema.index({ contributorId: 1 });
 submissionSchema.index({ walletAddress: 1 });
 submissionSchema.index({ isAccepted: 1 });
 submissionSchema.index({ grading: -1 });
