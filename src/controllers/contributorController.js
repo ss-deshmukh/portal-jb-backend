@@ -1,18 +1,27 @@
 const Contributor = require('../models/Contributor');
 const { validateEmail } = require('../middleware/validation');
+const jwt = require('jsonwebtoken');
+
+// Get AUTH_SECRET from environment variables
+const AUTH_SECRET = process.env.AUTH_SECRET;
+if (!AUTH_SECRET) {
+  throw new Error('AUTH_SECRET environment variable is required');
+}
 
 // Register a new contributor
 exports.register = async (req, res) => {
   try {
-    const { basicInfo } = req.body;
+    const { profile } = req.body;
     console.log('Registration request body:', JSON.stringify(req.body, null, 2));
 
     // Validate required fields
-    if (!basicInfo) {
+    if (!profile || !profile.basicInfo) {
       return res.status(400).json({
         message: 'Basic info is required'
       });
     }
+
+    const { basicInfo } = profile;
 
     // Validate email
     if (!basicInfo.email || !validateEmail(basicInfo.email)) {
@@ -28,13 +37,6 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Validate join date
-    if (!basicInfo.joinDate) {
-      return res.status(400).json({
-        message: 'Join date is required'
-      });
-    }
-
     // Check if contributor already exists
     const existingContributor = await Contributor.findOne({ 'basicInfo.email': basicInfo.email });
     if (existingContributor) {
@@ -47,6 +49,7 @@ exports.register = async (req, res) => {
     const contributor = new Contributor({
       basicInfo: {
         ...basicInfo,
+        joinDate: basicInfo.joinDate || new Date(),
         profileImage: basicInfo.profileImage || '',
         discord: basicInfo.discord || '',
         walletAddress: basicInfo.walletAddress || '',
@@ -54,7 +57,7 @@ exports.register = async (req, res) => {
         x: basicInfo.x || '',
         telegram: basicInfo.telegram || ''
       },
-      contactPreferences: {
+      contactPreferences: profile.contactPreferences || {
         emailNotifications: false,
         newsletterSubscription: {
           subscribed: false,
@@ -62,7 +65,7 @@ exports.register = async (req, res) => {
         },
         canBeContactedBySponsors: false
       },
-      preferences: {
+      preferences: profile.preferences || {
         interfaceSettings: {
           theme: 'system',
           language: 'eng'
@@ -81,7 +84,7 @@ exports.register = async (req, res) => {
           contactabilityBySponsors: 'none'
         }
       },
-      skills: req.body.skills || {
+      skills: profile.skills || {
         primarySkills: [],
         secondarySkills: [],
         skillTrajectory: {
@@ -112,6 +115,10 @@ exports.register = async (req, res) => {
     try {
       await contributor.save();
       console.log('Contributor saved successfully');
+      res.status(201).json({
+        message: 'Contributor registered successfully',
+        contributor
+      });
     } catch (saveError) {
       console.error('Save error:', saveError);
       if (saveError.name === 'ValidationError') {
@@ -120,13 +127,16 @@ exports.register = async (req, res) => {
           errors: Object.values(saveError.errors).map(err => err.message)
         });
       }
-      throw saveError;
+      if (saveError.code === 11000) {
+        return res.status(400).json({
+          message: 'Contributor already exists'
+        });
+      }
+      return res.status(500).json({
+        message: 'Error saving contributor',
+        error: saveError.message
+      });
     }
-
-    res.status(201).json({
-      message: 'Contributor registered successfully',
-      contributor
-    });
   } catch (error) {
     console.error('Registration error:', error);
     console.error('Error details:', {
@@ -163,7 +173,28 @@ exports.login = async (req, res) => {
       });
     }
 
-    // For testing purposes, use MongoDB _id as token
+    // Create session
+    const session = {
+      user: {
+        id: contributor._id,
+        email: contributor.basicInfo.email,
+        role: 'contributor',
+        permissions: ['read:profile', 'update:profile']
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+    };
+
+    // Create session cookie
+    const sessionCookie = jwt.sign(session, AUTH_SECRET);
+
+    // Set cookie in response
+    res.cookie('next-auth.session-token', sessionCookie, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+
     res.json({
       message: 'Login successful',
       contributor
@@ -180,7 +211,7 @@ exports.login = async (req, res) => {
 // Get contributor profile
 exports.getProfile = async (req, res) => {
   try {
-    const contributorId = req.user;
+    const contributorId = req.user.id;
     if (!contributorId) {
       return res.status(401).json({
         message: 'No token provided'
@@ -211,8 +242,8 @@ exports.getProfile = async (req, res) => {
 // Update contributor profile
 exports.updateProfile = async (req, res) => {
   try {
-    const contributorId = req.user;
-    const { updated } = req.body;
+    const contributorId = req.user.id;
+    const { email, updated } = req.body;
 
     if (!contributorId) {
       return res.status(401).json({
@@ -225,6 +256,13 @@ exports.updateProfile = async (req, res) => {
     if (!contributor) {
       return res.status(404).json({
         message: 'Contributor not found'
+      });
+    }
+
+    // Validate email if provided
+    if (email && email !== contributor.basicInfo.email) {
+      return res.status(400).json({
+        message: 'Email mismatch'
       });
     }
 
@@ -297,7 +335,7 @@ exports.updateProfile = async (req, res) => {
 // Delete contributor
 exports.deleteProfile = async (req, res) => {
   try {
-    const contributorId = req.user;
+    const contributorId = req.user.id;
     if (!contributorId) {
       return res.status(401).json({
         message: 'No token provided'
@@ -319,6 +357,32 @@ exports.deleteProfile = async (req, res) => {
     console.error('Delete error:', error);
     res.status(500).json({
       message: 'Error deleting contributor',
+      error: error.message
+    });
+  }
+};
+
+// Get all contributors (admin only)
+exports.getAll = async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        message: 'Admin access required'
+      });
+    }
+
+    // Get all contributors
+    const contributors = await Contributor.find({}, '-__v');
+    
+    res.json({
+      message: 'Contributors retrieved successfully',
+      contributors
+    });
+  } catch (error) {
+    console.error('Get all contributors error:', error);
+    res.status(500).json({
+      message: 'Error retrieving contributors',
       error: error.message
     });
   }

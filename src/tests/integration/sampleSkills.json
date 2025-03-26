@@ -1,0 +1,44 @@
+{
+  "skills": [
+    {
+      "id": "js-001",
+      "name": "JavaScript"
+    },
+    {
+      "id": "py-001",
+      "name": "Python"
+    },
+    {
+      "id": "pm-001",
+      "name": "Project Management"
+    },
+    {
+      "id": "ui-001",
+      "name": "UI/UX Design"
+    },
+    {
+      "id": "da-001",
+      "name": "Data Analysis"
+    },
+    {
+      "id": "cw-001",
+      "name": "Content Writing"
+    },
+    {
+      "id": "dm-001",
+      "name": "Digital Marketing"
+    },
+    {
+      "id": "ag-001",
+      "name": "Agile Methodology"
+    },
+    {
+      "id": "cc-001",
+      "name": "Cloud Computing"
+    },
+    {
+      "id": "sm-001",
+      "name": "Social Media Management"
+    }
+  ]
+} 

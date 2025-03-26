@@ -1,4 +1,6 @@
 const logger = require('../../utils/logger');
+const api = require('./testClient');
+const { startTestServer, stopTestServer } = require('./testServer');
 
 const generateUniqueWalletAddress = () => {
   // Base58 characters (excluding 0, O, I, l)
@@ -11,14 +13,24 @@ const generateUniqueWalletAddress = () => {
   return `5${randomPart}`;
 };
 
-const runTaskTests = async (api) => {
-  let taskId;
-  let sponsorId;
-  const testWalletAddress = generateUniqueWalletAddress();
+describe('Task Tests', () => {
+  let testSponsor;
+  let authToken;
 
-  try {
-    // Create test sponsor first
-    logger.info('Creating test sponsor for task...');
+  beforeAll(async () => {
+    await startTestServer();
+  });
+
+  afterAll(async () => {
+    await stopTestServer();
+  });
+
+  beforeEach(async () => {
+    // Clear any existing session
+    api.auth.clearSession();
+    
+    // Create a test sponsor
+    const testWalletAddress = generateUniqueWalletAddress();
     const sponsorResponse = await api.sponsor.register({
       profile: {
         walletAddress: testWalletAddress,
@@ -38,10 +50,9 @@ const runTaskTests = async (api) => {
     if (sponsorResponse.status !== 201) {
       throw new Error(`Sponsor creation failed: ${sponsorResponse.data.message}`);
     }
-    sponsorId = sponsorResponse.data.sponsor._id;
+    testSponsor = sponsorResponse.data.sponsor;
 
     // Login sponsor to get auth token
-    logger.info('Logging in sponsor...');
     const loginResponse = await api.sponsor.login({
       walletAddress: testWalletAddress
     });
@@ -49,91 +60,148 @@ const runTaskTests = async (api) => {
     if (loginResponse.status !== 200) {
       throw new Error(`Sponsor login failed: ${loginResponse.data.message}`);
     }
-    const authToken = loginResponse.data.token;
-    logger.info('Sponsor login successful');
+    authToken = loginResponse.data.token;
+  });
 
-    // Test 1: Create task
-    logger.info('Testing task creation...');
-    const createResponse = await api.task.create({
+  afterEach(async () => {
+    // Clean up test sponsor
+    if (testSponsor) {
+      await api.sponsor.delete(testSponsor._id);
+    }
+  });
+
+  test('should create a new task', async () => {
+    const taskData = {
       task: {
-        title: 'Integration Test Task',
-        sponsorId: testWalletAddress,
+        title: 'Test Task',
+        sponsorId: testSponsor.walletAddress,
         logo: 'https://example.com/task-logo.png',
-        description: 'Test task description for integration testing',
-        requirements: [
-          'Must have experience with Node.js',
-          'Must be familiar with MongoDB'
-        ],
-        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        reward: 1000,
+        description: 'Test Description',
+        requirements: ['Requirement 1', 'Requirement 2'],
+        deliverables: ['Deliverable 1', 'Deliverable 2'],
+        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        reward: 100,
         postedTime: new Date().toISOString(),
         status: 'open',
         priority: 'medium',
         category: ['development', 'backend'],
-        skills: ['nodejs', 'mongodb', 'express'],
-        maxAccepted: 5,
+        skills: ['javascript', 'nodejs'],
         submissions: []
       }
-    }, authToken);
+    };
 
-    if (createResponse.status !== 201) {
-      throw new Error(`Task creation failed: ${createResponse.data.message}`);
-    }
-    taskId = createResponse.data.id;
-    logger.info('Task creation successful');
+    const response = await api.task.create(taskData, authToken);
+    expect(response.status).toBe(201);
+    expect(response.data).toHaveProperty('task');
+    expect(response.data.task.title).toBe(taskData.task.title);
+    expect(response.data.task.sponsorId).toBe(testSponsor.walletAddress);
+  });
 
-    // Test 2: Get task
-    logger.info('Testing task retrieval...');
-    const getResponse = await api.task.get(taskId, authToken);
+  test('should get all tasks', async () => {
+    const response = await api.task.list();
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.data.tasks)).toBe(true);
+  });
 
-    if (getResponse.status !== 200) {
-      throw new Error(`Task retrieval failed: ${getResponse.data.message}`);
-    }
-    const task = getResponse.data.tasks[0];
-    logger.info('Task retrieval successful');
-
-    // Test 3: Update task
-    logger.info('Testing task update...');
-    const updateResponse = await api.task.update(taskId, {
+  test('should get a specific task', async () => {
+    // First create a task
+    const taskData = {
       task: {
-        description: 'Updated task description for integration testing',
-        priority: 'high',
-        category: ['development', 'backend', 'api'],
-        maxAccepted: 10
+        title: 'Test Task for Get',
+        sponsorId: testSponsor.walletAddress,
+        logo: 'https://example.com/task-logo.png',
+        description: 'Test Description',
+        requirements: ['Requirement 1'],
+        deliverables: ['Deliverable 1'],
+        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        reward: 100,
+        postedTime: new Date().toISOString(),
+        status: 'open',
+        priority: 'medium',
+        category: ['development'],
+        skills: ['javascript'],
+        submissions: []
       }
-    }, authToken);
+    };
 
-    if (updateResponse.status !== 200) {
-      throw new Error(`Task update failed: ${updateResponse.data.message}`);
-    }
-    logger.info('Task update successful');
+    const createResponse = await api.task.create(taskData, authToken);
+    const taskId = createResponse.data.task.id;
 
-    // Test 4: Delete task
-    logger.info('Testing task deletion...');
+    // Then get the task
+    const getResponse = await api.task.get(taskId);
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.data.tasks).toBeDefined();
+    expect(getResponse.data.tasks.length).toBe(1);
+    expect(getResponse.data.tasks[0].id).toBe(taskId);
+  });
+
+  test('should update a task', async () => {
+    // First create a task
+    const taskData = {
+      task: {
+        title: 'Test Task for Update',
+        sponsorId: testSponsor.walletAddress,
+        logo: 'https://example.com/task-logo.png',
+        description: 'Test Description',
+        requirements: ['Requirement 1'],
+        deliverables: ['Deliverable 1'],
+        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        reward: 100,
+        postedTime: new Date().toISOString(),
+        status: 'open',
+        priority: 'medium',
+        category: ['development'],
+        skills: ['javascript'],
+        submissions: []
+      }
+    };
+
+    const createResponse = await api.task.create(taskData, authToken);
+    const taskId = createResponse.data.task.id;
+
+    // Then update the task
+    const updateData = {
+      task: {
+        title: 'Updated Task Title',
+        description: 'Updated Description',
+        priority: 'high'
+      }
+    };
+
+    const updateResponse = await api.task.update(taskId, updateData, authToken);
+    expect(updateResponse.status).toBe(200);
+    expect(updateResponse.data.task.title).toBe(updateData.task.title);
+    expect(updateResponse.data.task.description).toBe(updateData.task.description);
+    expect(updateResponse.data.task.priority).toBe(updateData.task.priority);
+  });
+
+  test('should delete a task', async () => {
+    // First create a task
+    const taskData = {
+      task: {
+        title: 'Test Task for Delete',
+        sponsorId: testSponsor.walletAddress,
+        logo: 'https://example.com/task-logo.png',
+        description: 'Test Description',
+        requirements: ['Requirement 1'],
+        deliverables: ['Deliverable 1'],
+        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        reward: 100,
+        postedTime: new Date().toISOString(),
+        status: 'open',
+        priority: 'medium',
+        category: ['development'],
+        skills: ['javascript'],
+        submissions: []
+      }
+    };
+
+    const createResponse = await api.task.create(taskData, authToken);
+    const taskId = createResponse.data.task.id;
+
+    // Then delete the task
     const deleteResponse = await api.task.delete(taskId, authToken);
-
-    if (deleteResponse.status !== 200) {
-      throw new Error(`Task deletion failed: ${deleteResponse.data.message}`);
-    }
-    logger.info('Task deletion successful');
-
-    // Cleanup: Delete test sponsor
-    await api.sponsor.delete(sponsorId);
-
-    return { status: 'passed' };
-  } catch (error) {
-    logger.error('Task test failed:', error);
-    // Attempt cleanup even if tests fail
-    try {
-      if (taskId) await api.task.delete(taskId);
-      if (sponsorId) await api.sponsor.delete(sponsorId);
-    } catch (cleanupError) {
-      logger.error('Cleanup after test failure encountered an error:', cleanupError);
-    }
-    return { status: 'failed', error };
-  }
-};
-
-module.exports = {
-  runTaskTests
-}; 
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteResponse.data.message).toBe('Task deleted successfully');
+  });
+}); 

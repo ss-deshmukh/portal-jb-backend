@@ -7,14 +7,37 @@ const generateSkillId = () => {
   return crypto.randomBytes(16).toString('hex');
 };
 
+// Get all skills
+exports.getAllSkills = async (req, res) => {
+  try {
+    // Log the get request
+    logger.info('Getting all skills');
+
+    // Find all skills
+    const skills = await Skill.find();
+
+    logger.info('Skills retrieved successfully');
+
+    res.json({
+      message: 'Skills retrieved successfully',
+      skills
+    });
+  } catch (error) {
+    logger.error('Skills retrieval error:', error);
+    res.status(500).json({
+      message: 'Error retrieving skills',
+      error: error.message
+    });
+  }
+};
+
 // Create a new skill
 exports.createSkill = async (req, res) => {
   try {
     const { name } = req.body;
-    const sponsorId = req.user;
 
     // Log the incoming request data
-    logger.info('Creating skill with data:', { name, sponsorId });
+    logger.info('Creating skill with data:', req.body);
 
     // Check if skill already exists
     const existingSkill = await Skill.findOne({ name: name.trim() });
@@ -30,8 +53,7 @@ exports.createSkill = async (req, res) => {
     // Create new skill
     const skill = new Skill({
       id: skillId,
-      name: name.trim(),
-      createdBy: sponsorId
+      name: name.trim()
     });
 
     await skill.save();
@@ -55,10 +77,9 @@ exports.createSkill = async (req, res) => {
 exports.getSkill = async (req, res) => {
   try {
     const { id } = req.params;
-    const sponsorId = req.user;
 
     // Log the get request
-    logger.info('Getting skill:', { id, sponsorId });
+    logger.info('Getting skill:', { id });
 
     // Find skill
     const skill = await Skill.findOne({ id });
@@ -86,11 +107,11 @@ exports.getSkill = async (req, res) => {
 // Update a skill
 exports.updateSkill = async (req, res) => {
   try {
-    const { id, updated } = req.body;
-    const sponsorId = req.user;
+    const { id } = req.params;
+    const { name } = req.body;
 
     // Log the update request
-    logger.info('Updating skill:', { id, sponsorId });
+    logger.info('Updating skill:', { id, ...req.body });
 
     // Find skill
     const skill = await Skill.findOne({ id });
@@ -101,8 +122,8 @@ exports.updateSkill = async (req, res) => {
     }
 
     // Check if new name already exists
-    if (updated.name && updated.name !== skill.name) {
-      const existingSkill = await Skill.findOne({ name: updated.name.trim() });
+    if (name && name !== skill.name) {
+      const existingSkill = await Skill.findOne({ name: name.trim() });
       if (existingSkill) {
         return res.status(400).json({
           message: 'Skill name already exists'
@@ -111,7 +132,7 @@ exports.updateSkill = async (req, res) => {
     }
 
     // Update skill
-    skill.name = updated.name.trim();
+    if (name) skill.name = name.trim();
     await skill.save();
 
     logger.info('Skill updated successfully:', id);
@@ -132,11 +153,10 @@ exports.updateSkill = async (req, res) => {
 // Delete a skill
 exports.deleteSkill = async (req, res) => {
   try {
-    const { id } = req.body;
-    const sponsorId = req.user;
+    const { id } = req.params;
 
     // Log the deletion request
-    logger.info('Deleting skill:', { id, sponsorId });
+    logger.info('Deleting skill:', { id });
 
     // Find and delete skill
     const skill = await Skill.findOneAndDelete({ id });

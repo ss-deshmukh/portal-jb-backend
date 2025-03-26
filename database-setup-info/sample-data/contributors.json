@@ -1,0 +1,242 @@
+[
+  {
+    "basicInfo": {
+      "email": "alice@example.com",
+      "displayName": "Alice",
+      "bio": "Experienced smart contract developer",
+      "profileImage": "https://example.com/profiles/alice.png",
+      "joinDate": "2024-01-01T00:00:00Z",
+      "walletAddress": "0x1111111111111111111111111111111111111111",
+      "website": "https://alice.dev",
+      "x": "@alice",
+      "discord": "alice#1234",
+      "telegram": "@alice"
+    },
+    "contactPreferences": {
+      "emailNotifications": true,
+      "newsletterSubscription": {
+        "subscribed": true,
+        "interests": ["Smart Contracts", "DeFi"]
+      },
+      "canBeContactedBySponsors": true
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "dark",
+        "language": "en"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["Smart Contracts", "Security"],
+        "minimumReward": 3000,
+        "preferredDifficulty": "expert",
+        "timeCommitment": "full-time"
+      },
+      "privacySettings": {
+        "profileVisibility": "public",
+        "submissionVisibility": "public",
+        "skillsVisibility": "public",
+        "reputationVisibility": "public",
+        "contactabilityBySponsors": "public"
+      }
+    },
+    "skills": {
+      "primarySkills": [
+        { "name": "Smart Contracts", "level": "expert" },
+        { "name": "Security", "level": "expert" }
+      ],
+      "secondarySkills": [
+        { "name": "Solidity", "level": "expert" },
+        { "name": "DeFi", "level": "advanced" }
+      ],
+      "skillTrajectory": {
+        "improvementRate": 0.95,
+        "consistencyScore": 0.98
+      }
+    },
+    "reputation": {
+      "overallScore": 4.8,
+      "metrics": {
+        "taskCompletionRate": 0.95,
+        "qualityScore": 4.9,
+        "consistencyScore": 4.8,
+        "communityContributions": 4.7
+      },
+      "badges": [
+        {
+          "name": "Security Expert",
+          "description": "Completed 10+ security audits",
+          "category": "expertise",
+          "difficulty": "expert"
+        }
+      ]
+    },
+    "contributionStats": {
+      "totalTasksCompleted": 15,
+      "totalRewardsEarned": 75000,
+      "averageQualityRating": 4.9
+    },
+    "taskIds": ["task_001", "task_004", "task_007"],
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "basicInfo": {
+      "email": "bob@example.com",
+      "displayName": "Bob",
+      "bio": "UI/UX designer specializing in DeFi",
+      "profileImage": "https://example.com/profiles/bob.png",
+      "joinDate": "2024-01-02T00:00:00Z",
+      "walletAddress": "0x2222222222222222222222222222222222222222",
+      "website": "https://bob.design",
+      "x": "@bob",
+      "discord": "bob#5678",
+      "telegram": "@bob"
+    },
+    "contactPreferences": {
+      "emailNotifications": true,
+      "newsletterSubscription": {
+        "subscribed": true,
+        "interests": ["UI/UX", "DeFi"]
+      },
+      "canBeContactedBySponsors": true
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "light",
+        "language": "en"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["UI/UX", "Frontend"],
+        "minimumReward": 2500,
+        "preferredDifficulty": "advanced",
+        "timeCommitment": "part-time"
+      },
+      "privacySettings": {
+        "profileVisibility": "public",
+        "submissionVisibility": "public",
+        "skillsVisibility": "public",
+        "reputationVisibility": "public",
+        "contactabilityBySponsors": "public"
+      }
+    },
+    "skills": {
+      "primarySkills": [
+        { "name": "UI/UX Design", "level": "expert" },
+        { "name": "Frontend Development", "level": "advanced" }
+      ],
+      "secondarySkills": [
+        { "name": "DeFi", "level": "intermediate" },
+        { "name": "NFT", "level": "intermediate" }
+      ],
+      "skillTrajectory": {
+        "improvementRate": 0.85,
+        "consistencyScore": 0.9
+      }
+    },
+    "reputation": {
+      "overallScore": 4.6,
+      "metrics": {
+        "taskCompletionRate": 0.9,
+        "qualityScore": 4.7,
+        "consistencyScore": 4.6,
+        "communityContributions": 4.5
+      },
+      "badges": [
+        {
+          "name": "Design Master",
+          "description": "Completed 5+ UI/UX projects",
+          "category": "expertise",
+          "difficulty": "expert"
+        }
+      ]
+    },
+    "contributionStats": {
+      "totalTasksCompleted": 8,
+      "totalRewardsEarned": 20000,
+      "averageQualityRating": 4.7
+    },
+    "taskIds": ["task_002", "task_003", "task_008"],
+    "createdAt": "2024-01-02T00:00:00Z",
+    "updatedAt": "2024-01-02T00:00:00Z"
+  },
+  {
+    "basicInfo": {
+      "email": "charlie@example.com",
+      "displayName": "Charlie",
+      "bio": "Layer 2 scaling specialist",
+      "profileImage": "https://example.com/profiles/charlie.png",
+      "joinDate": "2024-01-03T00:00:00Z",
+      "walletAddress": "0x3333333333333333333333333333333333333333",
+      "website": "https://charlie.dev",
+      "x": "@charlie",
+      "discord": "charlie#9012",
+      "telegram": "@charlie"
+    },
+    "contactPreferences": {
+      "emailNotifications": true,
+      "newsletterSubscription": {
+        "subscribed": true,
+        "interests": ["Layer 2", "Research"]
+      },
+      "canBeContactedBySponsors": true
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "dark",
+        "language": "en"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["Layer 2", "Research"],
+        "minimumReward": 4000,
+        "preferredDifficulty": "expert",
+        "timeCommitment": "full-time"
+      },
+      "privacySettings": {
+        "profileVisibility": "public",
+        "submissionVisibility": "public",
+        "skillsVisibility": "public",
+        "reputationVisibility": "public",
+        "contactabilityBySponsors": "public"
+      }
+    },
+    "skills": {
+      "primarySkills": [
+        { "name": "Layer 2", "level": "expert" },
+        { "name": "Research", "level": "expert" }
+      ],
+      "secondarySkills": [
+        { "name": "Smart Contracts", "level": "advanced" },
+        { "name": "Security", "level": "advanced" }
+      ],
+      "skillTrajectory": {
+        "improvementRate": 0.9,
+        "consistencyScore": 0.95
+      }
+    },
+    "reputation": {
+      "overallScore": 4.7,
+      "metrics": {
+        "taskCompletionRate": 0.92,
+        "qualityScore": 4.8,
+        "consistencyScore": 4.7,
+        "communityContributions": 4.6
+      },
+      "badges": [
+        {
+          "name": "Layer 2 Expert",
+          "description": "Completed 8+ Layer 2 projects",
+          "category": "expertise",
+          "difficulty": "expert"
+        }
+      ]
+    },
+    "contributionStats": {
+      "totalTasksCompleted": 12,
+      "totalRewardsEarned": 48000,
+      "averageQualityRating": 4.8
+    },
+    "taskIds": ["task_005", "task_007", "task_009"],
+    "createdAt": "2024-01-03T00:00:00Z",
+    "updatedAt": "2024-01-03T00:00:00Z"
+  }
+] 

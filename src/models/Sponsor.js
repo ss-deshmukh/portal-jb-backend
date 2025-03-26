@@ -6,14 +6,14 @@ const sponsorSchema = new mongoose.Schema({
   name: { type: String, required: true },
   logo: { type: String, required: true },
   description: { type: String, required: true },
-  website: { type: String, default: null },
-  x: { type: String, default: null },
-  discord: { type: String, default: null },
-  telegram: { type: String, default: null },
-  contactEmail: { type: String, default: null },
+  website: { type: String, default: '' },
+  x: { type: String, default: '' },
+  discord: { type: String, default: '' },
+  telegram: { type: String, default: '' },
+  contactEmail: { type: String, default: '' },
   categories: [{ type: String }],
   taskIds: [{ type: String }],
-  registeredAt: { type: String, default: () => new Date().toISOString() }
+  registeredAt: { type: Date, default: Date.now }
 }, {
   timestamps: true
 });
@@ -23,5 +23,6 @@ sponsorSchema.index({ walletAddress: 1 });
 sponsorSchema.index({ name: 1 });
 sponsorSchema.index({ categories: 1 });
 sponsorSchema.index({ verified: 1 });
+sponsorSchema.index({ registeredAt: -1 });
 
 module.exports = mongoose.model('Sponsor', sponsorSchema); 

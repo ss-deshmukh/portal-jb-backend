@@ -1,6 +1,6 @@
 const api = require('./testClient');
-const assert = require('assert');
 const logger = require('../../utils/logger');
+const { startTestServer, stopTestServer } = require('./testServer');
 
 function generateTestWalletAddress() {
   // Generate a valid Polkadot address format
@@ -13,73 +13,174 @@ function generateTestWalletAddress() {
   return address;
 }
 
-async function runSponsorTests() {
-  let walletAddress;
-  let authToken;
+describe('Sponsor Tests', () => {
+  let testSponsor;
 
-  try {
-    // Test sponsor registration
-    logger.info('Testing sponsor registration...');
-    const registerData = {
-      profile: {
-        walletAddress: generateTestWalletAddress(),
-        name: 'Test Sponsor',
-        logo: 'https://example.com/logo.png',
-        description: 'Test sponsor description',
-        website: 'https://example.com',
-        x: '@testsponsor',
-        discord: 'testsponsor#1234',
-        telegram: '@testsponsor',
-        contactEmail: 'test@example.com',
-        categories: ['test'],
-        taskIds: [],
-        verified: false
+  beforeAll(async () => {
+    // Setup before all tests
+    logger.info('Starting sponsor tests...');
+    await startTestServer();
+  });
+
+  afterAll(async () => {
+    // Cleanup after all tests
+    await stopTestServer();
+    logger.info('Completed sponsor tests');
+  });
+
+  beforeEach(async () => {
+    // Clear any existing sessions before each test
+    await api.auth.clearSession();
+  });
+
+  it('should register a new sponsor', async () => {
+    try {
+      const sponsorData = {
+        profile: {
+          walletAddress: generateTestWalletAddress(),
+          verified: false,
+          name: 'Test Sponsor',
+          logo: 'https://example.com/logo.png',
+          description: 'Test sponsor description',
+          website: 'https://example.com',
+          x: '@testsponsor',
+          discord: 'testsponsor#1234',
+          telegram: '@testsponsor',
+          contactEmail: 'test@example.com',
+          categories: ['development', 'design'],
+          taskIds: [],
+          registeredAt: new Date()
+        }
+      };
+
+      const response = await api.sponsor.register(sponsorData);
+      expect(response.status).toBe(201);
+      expect(response.data).toHaveProperty('message', 'Sponsor registered successfully');
+      expect(response.data).toHaveProperty('sponsor');
+      expect(response.data.sponsor).toHaveProperty('_id');
+      expect(response.data.sponsor.name).toBe(sponsorData.profile.name);
+      expect(response.data.sponsor.walletAddress).toBe(sponsorData.profile.walletAddress);
+      
+      // Store sponsor data for other tests
+      testSponsor = {
+        profile: response.data.sponsor
+      };
+    } catch (error) {
+      if (error.response) {
+        console.error('Sponsor registration error:', error.response.data);
+        throw new Error(`Sponsor registration failed: ${error.response.data.message}`);
       }
-    };
-    const registerResponse = await api.sponsor.register(registerData);
-    assert.strictEqual(registerResponse.status, 201);
-    walletAddress = registerData.profile.walletAddress;
-    logger.info('Sponsor registration successful');
+      throw error;
+    }
+  });
 
-    // Test sponsor login
-    logger.info('Testing sponsor login...');
-    const loginResponse = await api.sponsor.login({ walletAddress });
-    assert.strictEqual(loginResponse.status, 200);
-    authToken = loginResponse.data.token;
-    logger.info('Sponsor login successful');
-
-    // Test get sponsor profile
-    logger.info('Testing get sponsor profile...');
-    const profileResponse = await api.sponsor.getProfile(authToken);
-    assert.strictEqual(profileResponse.status, 200);
-    assert.strictEqual(profileResponse.data.profile.walletAddress, walletAddress);
-    logger.info('Get sponsor profile successful');
-
-    // Test update sponsor profile
-    logger.info('Testing update sponsor profile...');
-    const updateData = {
-      profile: {
-        name: 'Updated Test Sponsor',
-        description: 'Updated test sponsor description'
+  it('should login a sponsor', async () => {
+    try {
+      const response = await api.sponsor.login({ walletAddress: testSponsor.profile.walletAddress });
+      expect(response.status).toBe(200);
+      expect(response.data).toHaveProperty('message', 'Login successful');
+      expect(response.data).toHaveProperty('sponsor');
+      expect(response.data.sponsor.walletAddress).toBe(testSponsor.profile.walletAddress);
+    } catch (error) {
+      if (error.response) {
+        console.error('Sponsor login error:', error.response.data);
+        throw new Error(`Sponsor login failed: ${error.response.data.message}`);
       }
-    };
-    const updateResponse = await api.sponsor.updateProfile(authToken, updateData);
-    assert.strictEqual(updateResponse.status, 200);
-    assert.strictEqual(updateResponse.data.profile.name, updateData.profile.name);
-    assert.strictEqual(updateResponse.data.profile.description, updateData.profile.description);
-    logger.info('Update sponsor profile successful');
+      throw error;
+    }
+  });
 
-    // Test delete sponsor
-    logger.info('Testing delete sponsor...');
-    const deleteResponse = await api.sponsor.delete(authToken);
-    assert.strictEqual(deleteResponse.status, 200);
-    logger.info('Delete sponsor successful');
+  it('should get sponsor profile', async () => {
+    try {
+      // Set up session for the test sponsor
+      await api.sponsor.login({ walletAddress: testSponsor.profile.walletAddress });
 
-    return { status: 'success' };
-  } catch (error) {
-    logger.error('Sponsor test failed:', error);
-    return { status: 'failed', error };
-  }
-}
+      const response = await api.sponsor.getProfile();
+      expect(response.status).toBe(200);
+      expect(response.data).toHaveProperty('sponsor');
+      expect(response.data.sponsor.walletAddress).toBe(testSponsor.profile.walletAddress);
+      expect(response.data.sponsor.name).toBe(testSponsor.profile.name);
+    } catch (error) {
+      if (error.response) {
+        console.error('Get profile error:', error.response.data);
+        throw new Error(`Get profile failed: ${error.response.data.message}`);
+      }
+      throw error;
+    }
+  });
 
-module.exports = { runSponsorTests }; 
+  it('should update sponsor profile', async () => {
+    try {
+      // Set up session for the test sponsor
+      await api.sponsor.login({ walletAddress: testSponsor.profile.walletAddress });
+
+      const updateData = {
+        profile: {
+          name: 'Updated Test Sponsor',
+          description: 'Updated test sponsor description',
+          website: 'https://updated.example.com',
+          x: '@updatedsponsor',
+          discord: 'updatedsponsor#1234',
+          telegram: '@updatedsponsor',
+          contactEmail: 'updated@example.com',
+          categories: ['development', 'design', 'blockchain']
+        }
+      };
+
+      const response = await api.sponsor.updateProfile(updateData);
+      expect(response.status).toBe(200);
+      expect(response.data).toHaveProperty('message', 'Profile updated successfully');
+      expect(response.data).toHaveProperty('sponsor');
+      expect(response.data.sponsor.name).toBe(updateData.profile.name);
+      expect(response.data.sponsor.description).toBe(updateData.profile.description);
+      expect(response.data.sponsor.website).toBe(updateData.profile.website);
+    } catch (error) {
+      if (error.response) {
+        console.error('Update profile error:', error.response.data);
+        throw new Error(`Update profile failed: ${error.response.data.message}`);
+      }
+      throw error;
+    }
+  });
+
+  it('should get all sponsors', async () => {
+    try {
+      // Set up session for admin user
+      await api.auth.setSession({
+        id: 'admin-id',
+        email: 'admin@example.com',
+        role: 'admin'
+      });
+
+      const response = await api.sponsor.getAll();
+      expect(response.status).toBe(200);
+      expect(response.data).toHaveProperty('sponsors');
+      expect(Array.isArray(response.data.sponsors)).toBe(true);
+      expect(response.data.sponsors.length).toBeGreaterThan(0);
+      expect(response.data.sponsors[0]).toHaveProperty('name');
+    } catch (error) {
+      if (error.response) {
+        console.error('Get all sponsors error:', error.response.data);
+        throw new Error(`Get all sponsors failed: ${error.response.data.message}`);
+      }
+      throw error;
+    }
+  });
+
+  it('should delete sponsor profile', async () => {
+    try {
+      // Set up session for the test sponsor
+      await api.sponsor.login({ walletAddress: testSponsor.profile.walletAddress });
+
+      const response = await api.sponsor.delete();
+      expect(response.status).toBe(200);
+      expect(response.data).toHaveProperty('message', 'Sponsor deleted successfully');
+    } catch (error) {
+      if (error.response) {
+        console.error('Delete sponsor error:', error.response.data);
+        throw new Error(`Delete sponsor failed: ${error.response.data.message}`);
+      }
+      throw error;
+    }
+  });
+}); 

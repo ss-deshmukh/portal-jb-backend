@@ -58,6 +58,7 @@ const testData = {
         logo: 'https://example.com/task-logo.png',
         description: 'Test task description',
         requirements: ['Requirement 1', 'Requirement 2'],
+        deliverables: ['Deliverable 1', 'Deliverable 2'], // Add deliverables array
         deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
         postedTime: new Date().toISOString(), // Add posted time
         status: 'open', // Add status

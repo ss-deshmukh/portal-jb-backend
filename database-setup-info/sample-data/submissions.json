@@ -1,0 +1,127 @@
+[
+  {
+    "id": "submission_001",
+    "taskId": "task_001",
+    "walletAddress": "0x1111111111111111111111111111111111111111",
+    "submissionTime": "2024-01-15T10:00:00Z",
+    "status": "accepted",
+    "isAccepted": true,
+    "feedback": "Excellent work on the security audit",
+    "rating": 5,
+    "reviewTime": "2024-01-20T15:00:00Z",
+    "reviewerWalletAddress": "0x4444444444444444444444444444444444444444",
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-20T15:00:00Z"
+  },
+  {
+    "id": "submission_002",
+    "taskId": "task_002",
+    "walletAddress": "0x2222222222222222222222222222222222222222",
+    "submissionTime": "2024-01-16T11:00:00Z",
+    "status": "accepted",
+    "isAccepted": true,
+    "feedback": "Great UI/UX design implementation",
+    "rating": 4,
+    "reviewTime": "2024-01-21T16:00:00Z",
+    "reviewerWalletAddress": "0x5555555555555555555555555555555555555555",
+    "createdAt": "2024-01-16T11:00:00Z",
+    "updatedAt": "2024-01-21T16:00:00Z"
+  },
+  {
+    "id": "submission_003",
+    "taskId": "task_003",
+    "walletAddress": "0x2222222222222222222222222222222222222222",
+    "submissionTime": "2024-01-17T12:00:00Z",
+    "status": "accepted",
+    "isAccepted": true,
+    "feedback": "Well-structured frontend implementation",
+    "rating": 5,
+    "reviewTime": "2024-01-22T17:00:00Z",
+    "reviewerWalletAddress": "0x5555555555555555555555555555555555555555",
+    "createdAt": "2024-01-17T12:00:00Z",
+    "updatedAt": "2024-01-22T17:00:00Z"
+  },
+  {
+    "id": "submission_004",
+    "taskId": "task_004",
+    "walletAddress": "0x1111111111111111111111111111111111111111",
+    "submissionTime": "2024-01-18T13:00:00Z",
+    "status": "accepted",
+    "isAccepted": true,
+    "feedback": "Thorough smart contract audit",
+    "rating": 5,
+    "reviewTime": "2024-01-23T18:00:00Z",
+    "reviewerWalletAddress": "0x4444444444444444444444444444444444444444",
+    "createdAt": "2024-01-18T13:00:00Z",
+    "updatedAt": "2024-01-23T18:00:00Z"
+  },
+  {
+    "id": "submission_005",
+    "taskId": "task_005",
+    "walletAddress": "0x3333333333333333333333333333333333333333",
+    "submissionTime": "2024-01-19T14:00:00Z",
+    "status": "accepted",
+    "isAccepted": true,
+    "feedback": "Excellent Layer 2 scaling research",
+    "rating": 5,
+    "reviewTime": "2024-01-24T19:00:00Z",
+    "reviewerWalletAddress": "0x6666666666666666666666666666666666666666",
+    "createdAt": "2024-01-19T14:00:00Z",
+    "updatedAt": "2024-01-24T19:00:00Z"
+  },
+  {
+    "id": "sub_006",
+    "taskId": "task_006",
+    "walletAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "submissions": [
+      "https://github.com/contributor2/mobile-wallet",
+      "https://docs.google.com/document/d/pqr678/wallet-docs"
+    ],
+    "grading": null,
+    "isAccepted": false
+  },
+  {
+    "id": "sub_007",
+    "taskId": "task_007",
+    "walletAddress": "0x9876543210abcdef1234567890abcdef12345678",
+    "submissions": [
+      "https://github.com/contributor1/yield-farming",
+      "https://docs.google.com/document/d/stu901/yield-strategy"
+    ],
+    "grading": 9,
+    "isAccepted": true
+  },
+  {
+    "id": "sub_008",
+    "taskId": "task_008",
+    "walletAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "submissions": [
+      "https://github.com/contributor3/nft-metadata",
+      "https://docs.google.com/document/d/vwx234/metadata-standard"
+    ],
+    "grading": 7,
+    "isAccepted": false
+  },
+  {
+    "id": "sub_009",
+    "taskId": "task_009",
+    "walletAddress": "0x1234567890abcdef1234567890abcdef12345678",
+    "submissions": [
+      "https://github.com/contributor2/layer2-scaling",
+      "https://docs.google.com/document/d/yza567/scaling-solution"
+    ],
+    "grading": null,
+    "isAccepted": false
+  },
+  {
+    "id": "sub_010",
+    "taskId": "task_010",
+    "walletAddress": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "submissions": [
+      "https://github.com/contributor1/did-system",
+      "https://docs.google.com/document/d/bcd890/did-implementation"
+    ],
+    "grading": 8,
+    "isAccepted": true
+  }
+] 

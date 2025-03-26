@@ -11,6 +11,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 
 // Load environment variables
 dotenv.config();
@@ -52,7 +53,13 @@ logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 logger.info(`Port: ${process.env.PORT || 5000}`);
 
 // Security middleware
-app.use(helmet()); // Set security HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for development
+  crossOriginEmbedderPolicy: false, // Disable COEP for development
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin resources
+  crossOriginOpenerPolicy: { policy: "unsafe-none" } // Allow cross-origin window opening
+}));
+
 app.use(cors({
   origin: process.env.NODE_ENV === 'development' 
     ? true // Allow all origins in development
@@ -70,6 +77,9 @@ app.use(xss());
 
 // Prevent parameter pollution
 app.use(hpp());
+
+// Enable cookie parsing
+app.use(cookieParser());
 
 // Rate limiting configuration
 const createRateLimiter = (windowMs, max, message) => {
@@ -106,7 +116,16 @@ const apiLimiter = createRateLimiter(
 // Apply rate limiting to specific routes
 app.use('/api/contributor/login', authLimiter);
 app.use('/api/sponsor/login', authLimiter);
-app.use('/api', apiLimiter);
+
+// Apply auth middleware to protected API routes only
+app.use('/api/contributor/profile', auth);
+app.use('/api/contributor/update', auth);
+app.use('/api/contributor/delete', auth);
+app.use('/api/sponsor/profile', auth);
+app.use('/api/sponsor/update', auth);
+app.use('/api/sponsor/delete', auth);
+app.use('/api/task', auth);
+app.use('/api/submission', auth);
 
 // Compression middleware
 app.use(compression());
@@ -139,6 +158,23 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Portal JB API' });
 });
 
+// Health check endpoint (public)
+app.get('/api/health', (req, res) => {
+  const health = {
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      host: mongoose.connection.host,
+      database: mongoose.connection.name
+    },
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  };
+
+  res.json(health);
+});
+
 // API routes
 app.use('/api/contributor', contributorRoutes);
 app.use('/api/sponsor', sponsorRoutes);
@@ -159,23 +195,6 @@ app.get('/api/admin', auth, authorize('admin'), (req, res) => {
 // Permission-based route example
 app.get('/api/tasks', auth, hasPermission('read:tasks'), (req, res) => {
   res.json({ message: 'This is a tasks route requiring read permission' });
-});
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  const health = {
-    status: 'ok',
-    environment: process.env.NODE_ENV || 'development',
-    database: {
-      status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      host: mongoose.connection.host,
-      database: mongoose.connection.name
-    },
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
-  };
-
-  res.json(health);
 });
 
 // 404 handler

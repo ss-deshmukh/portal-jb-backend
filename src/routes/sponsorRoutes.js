@@ -13,4 +13,7 @@ router.get('/', auth, sponsorController.getProfile);
 router.put('/', auth, sponsorValidation, sponsorController.updateProfile);
 router.delete('/', auth, sponsorController.deleteProfile);
 
+// Admin routes
+router.get('/all', auth, sponsorController.getAll);
+
 module.exports = router; 

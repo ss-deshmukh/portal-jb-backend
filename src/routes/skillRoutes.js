@@ -2,21 +2,15 @@ const express = require('express');
 const router = express.Router();
 const skillController = require('../controllers/skillController');
 const { skillValidation, skillUpdateValidation } = require('../middleware/validation');
-const { auth } = require('../middleware/auth');
+const { auth, authorize } = require('../middleware/auth');
 
-// Apply auth middleware to all routes
-router.use(auth);
-
-// Create a new skill
-router.post('/create', skillValidation, skillController.createSkill);
-
-// Get a skill by ID
+// Public routes
+router.get('/all', skillController.getAllSkills);
 router.get('/:id', skillController.getSkill);
 
-// Update a skill
-router.put('/', skillUpdateValidation, skillController.updateSkill);
-
-// Delete a skill
-router.delete('/', skillController.deleteSkill);
+// Protected routes (admin only)
+router.post('/create', auth, authorize('admin'), skillValidation, skillController.createSkill);
+router.put('/:id', auth, authorize('admin'), skillUpdateValidation, skillController.updateSkill);
+router.delete('/:id', auth, authorize('admin'), skillController.deleteSkill);
 
 module.exports = router; 

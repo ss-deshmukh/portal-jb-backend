@@ -1,0 +1,24 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": ["id", "name"],
+    "properties": {
+      "id": { 
+        "bsonType": "string",
+        "description": "Unique identifier for the skill"
+      },
+      "name": { 
+        "bsonType": "string",
+        "description": "Name of the skill"
+      },
+      "createdAt": {
+        "bsonType": "date",
+        "description": "Timestamp of creation"
+      },
+      "updatedAt": {
+        "bsonType": "date",
+        "description": "Timestamp of last update"
+      }
+    }
+  }
+}

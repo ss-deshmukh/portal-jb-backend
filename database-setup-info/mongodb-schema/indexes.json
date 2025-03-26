@@ -1,0 +1,128 @@
+{
+  "tasks": [
+    {
+      "key": { "id": 1 },
+      "unique": true,
+      "name": "task_id_unique"
+    },
+    {
+      "key": { "sponsorId": 1 },
+      "name": "task_sponsor"
+    },
+    {
+      "key": { "status": 1 },
+      "name": "task_status"
+    },
+    {
+      "key": { "category": 1 },
+      "name": "task_category"
+    },
+    {
+      "key": { "skills": 1 },
+      "name": "task_skills"
+    },
+    {
+      "key": { "deadline": 1 },
+      "name": "task_deadline"
+    },
+    {
+      "key": { "postedTime": 1 },
+      "name": "task_posted_time"
+    },
+    {
+      "key": { "priority": 1 },
+      "name": "task_priority"
+    },
+    {
+      "key": { "status": 1, "deadline": 1 },
+      "name": "task_status_deadline"
+    },
+    {
+      "key": { "category": 1, "status": 1 },
+      "name": "task_category_status"
+    }
+  ],
+  "submissions": [
+    {
+      "key": { "id": 1 },
+      "unique": true,
+      "name": "submission_id_unique"
+    },
+    {
+      "key": { "taskId": 1 },
+      "name": "submission_task"
+    },
+    {
+      "key": { "walletAddress": 1 },
+      "name": "submission_contributor"
+    },
+    {
+      "key": { "isAccepted": 1 },
+      "name": "submission_accepted"
+    },
+    {
+      "key": { "taskId": 1, "walletAddress": 1 },
+      "unique": true,
+      "name": "submission_task_contributor_unique"
+    }
+  ],
+  "contributors": [
+    {
+      "key": { "basicInfo.walletAddress": 1 },
+      "unique": true,
+      "name": "contributor_wallet_unique"
+    },
+    {
+      "key": { "basicInfo.email": 1 },
+      "unique": true,
+      "name": "contributor_email_unique"
+    },
+    {
+      "key": { "skills.primarySkills.name": 1 },
+      "name": "contributor_primary_skills"
+    },
+    {
+      "key": { "skills.secondarySkills.name": 1 },
+      "name": "contributor_secondary_skills"
+    },
+    {
+      "key": { "reputation.overallScore": 1 },
+      "name": "contributor_reputation"
+    },
+    {
+      "key": { "contributionStats.totalTasksCompleted": 1 },
+      "name": "contributor_tasks_completed"
+    }
+  ],
+  "sponsors": [
+    {
+      "key": { "walletAddress": 1 },
+      "unique": true,
+      "name": "sponsor_wallet_unique"
+    },
+    {
+      "key": { "verified": 1 },
+      "name": "sponsor_verified"
+    },
+    {
+      "key": { "categories": 1 },
+      "name": "sponsor_categories"
+    },
+    {
+      "key": { "taskIds": 1 },
+      "name": "sponsor_tasks"
+    }
+  ],
+  "skills": [
+    {
+      "key": { "id": 1 },
+      "unique": true,
+      "name": "skill_id_unique"
+    },
+    {
+      "key": { "name": 1 },
+      "unique": true,
+      "name": "skill_name_unique"
+    }
+  ]
+} 

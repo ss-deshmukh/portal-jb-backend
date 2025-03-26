@@ -1,17 +1,15 @@
 {
   "$jsonSchema": {
     "bsonType": "object",
-    "required": ["basicInfo"],
     "properties": {
       "basicInfo": {
         "bsonType": "object",
-        "required": ["email", "displayName", "joinDate"],
         "properties": {
           "email": { "bsonType": "string" },
           "displayName": { "bsonType": "string" },
           "bio": { "bsonType": "string" },
           "profileImage": { "bsonType": "string" },
-          "joinDate": { "bsonType": "string" },
+          "joinDate": { "bsonType": "date" },
           "walletAddress": { "bsonType": "string" },
           "website": { "bsonType": "string" },
           "x": { "bsonType": "string" },
@@ -67,8 +65,26 @@
       "skills": {
         "bsonType": "object",
         "properties": {
-          "primarySkills": { "bsonType": "array", "items": { "bsonType": "object" } },
-          "secondarySkills": { "bsonType": "array", "items": { "bsonType": "object" } },
+          "primarySkills": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "name": { "bsonType": "string" },
+                "level": { "bsonType": "string" }
+              }
+            }
+          },
+          "secondarySkills": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "name": { "bsonType": "string" },
+                "level": { "bsonType": "string" }
+              }
+            }
+          },
           "skillTrajectory": {
             "bsonType": "object",
             "properties": {
@@ -90,6 +106,18 @@
               "consistencyScore": { "bsonType": "number" },
               "communityContributions": { "bsonType": "number" }
             }
+          },
+          "badges": {
+            "bsonType": "array",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "name": { "bsonType": "string" },
+                "description": { "bsonType": "string" },
+                "category": { "bsonType": "string" },
+                "difficulty": { "bsonType": "string" }
+              }
+            }
           }
         }
       },
@@ -101,7 +129,9 @@
           "averageQualityRating": { "bsonType": "number" }
         }
       },
-      "taskIds": { "bsonType": "array", "items": { "bsonType": "string" } }
+      "taskIds": { "bsonType": "array", "items": { "bsonType": "string" } },
+      "createdAt": { "bsonType": "date" },
+      "updatedAt": { "bsonType": "date" }
     }
   }
 }

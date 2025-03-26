@@ -1,275 +1,191 @@
 const logger = require('../../utils/logger');
-const assert = require('assert');
+const api = require('./testClient');
+const { startTestServer, stopTestServer } = require('./testServer');
+const mongoose = require('mongoose');
 
-const generateUniqueWalletAddress = () => {
-  // Base58 characters (excluding 0, O, I, l)
-  const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  // Generate a random string of 47 characters using base58 characters
-  const randomPart = Array.from({ length: 47 }, () => 
-    base58Chars[Math.floor(Math.random() * base58Chars.length)]
-  ).join('');
-  // Start with 5 and add the random part
-  return `5${randomPart}`;
-};
-
-const cleanupTestData = async (api) => {
-  try {
-    // Find contributor by email
-    const contributorResponse = await api.contributor.login({
-      email: 'test.contributor@example.com'
-    });
-    if (contributorResponse.status === 200) {
-      const contributorId = contributorResponse.data.contributor._id;
-      await api.contributor.delete(contributorId);
-    }
-  } catch (error) {
-    // Ignore errors if contributor doesn't exist
-  }
-};
-
-const runSubmissionTests = async (api) => {
-  let submissionId;
-  let taskId;
-  let contributorId;
-  const testSponsorWallet = generateUniqueWalletAddress();
-  const testContributorWallet = generateUniqueWalletAddress();
-
-  try {
-    // Clean up test data before running tests
-    await cleanupTestData(api);
-
-    // Create test sponsor first
-    logger.info('Creating test sponsor for submission...');
-    const sponsorResponse = await api.sponsor.register({
-      profile: {
-        walletAddress: testSponsorWallet,
-        name: 'Test Sponsor for Submission',
-        logo: 'https://example.com/sponsor-logo.png',
-        description: 'Test sponsor description for submission testing',
-        website: 'https://company.com/test-submission',
-        x: 'https://twitter.com/test-sponsor',
-        discord: 'https://discord.gg/test-sponsor',
-        telegram: 'https://t.me/test-sponsor',
-        contactEmail: 'test.sponsor@example.com',
-        categories: ['development', 'design'],
-        taskIds: []
-      }
-    });
-
-    if (sponsorResponse.status !== 201) {
-      throw new Error(`Sponsor creation failed: ${sponsorResponse.data.message}`);
-    }
-
-    // Login sponsor to get auth token
-    logger.info('Logging in sponsor...');
-    const sponsorLoginResponse = await api.sponsor.login({
-      walletAddress: testSponsorWallet
-    });
-
-    if (sponsorLoginResponse.status !== 200) {
-      throw new Error(`Sponsor login failed: ${sponsorLoginResponse.data.message}`);
-    }
-    const sponsorAuthToken = sponsorLoginResponse.data.token;
-    logger.info('Sponsor login successful');
-
-    // Create test task
-    logger.info('Creating test task...');
-    const taskResponse = await api.task.create({
-      task: {
-        title: 'Integration Test Task for Submission',
-        sponsorId: testSponsorWallet,
-        logo: 'https://example.com/task-logo.png',
-        description: 'Test task description for submission testing',
-        requirements: [
-          'Must have experience with Node.js',
-          'Must be familiar with MongoDB'
-        ],
-        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        reward: 1000,
-        postedTime: new Date().toISOString(),
-        status: 'open',
-        priority: 'medium',
-        category: ['development', 'backend'],
-        skills: ['nodejs', 'mongodb', 'express'],
-        maxAccepted: 5,
-        submissions: []
-      }
-    }, sponsorAuthToken);
-
-    if (taskResponse.status !== 201) {
-      throw new Error(`Task creation failed: ${taskResponse.data.message}`);
-    }
-    taskId = taskResponse.data.id;
-    logger.info('Task creation successful');
-
-    // Create test contributor
-    logger.info('Creating test contributor...');
-    const contributorResponse = await api.contributor.register({
-      basicInfo: {
-        email: 'test.contributor@example.com',
-        displayName: 'Test Contributor',
-        walletAddress: testContributorWallet,
-        joinDate: new Date().toISOString()
-      },
-      contactPreferences: {
-        emailNotifications: false,
-        newsletterSubscription: {
-          subscribed: false,
-          interests: []
-        },
-        canBeContactedBySponsors: false
-      },
-      preferences: {
-        interfaceSettings: {
-          theme: 'system',
-          language: 'eng'
-        },
-        opportunityPreferences: {
-          preferredCategories: [],
-          minimumReward: 0,
-          preferredDifficulty: 'all',
-          timeCommitment: 'medium'
-        },
-        privacySettings: {
-          profileVisibility: 'private',
-          submissionVisibility: 'public',
-          skillsVisibility: 'private',
-          reputationVisibility: 'private',
-          contactabilityBySponsors: 'none'
-        }
-      },
-      skills: {
-        primarySkills: [
-          { name: 'Node.js', level: 'expert' },
-          { name: 'MongoDB', level: 'advanced' }
-        ],
-        secondarySkills: [],
-        skillTrajectory: {
-          improvementRate: 0,
-          consistencyScore: 0
-        }
-      },
-      reputation: {
-        overallScore: 0,
-        metrics: {
-          taskCompletionRate: 0,
-          qualityScore: 0,
-          consistencyScore: 0,
-          communityContributions: 0
-        },
-        badges: []
-      },
-      contributionStats: {
-        totalTasksCompleted: 0,
-        totalRewardsEarned: 0,
-        averageQualityRating: 0
-      },
-      taskIds: []
-    });
-
-    if (contributorResponse.status !== 201) {
-      throw new Error(`Contributor creation failed: ${contributorResponse.data.message}`);
-    }
-    contributorId = contributorResponse.data.contributor._id;
-
-    // Login contributor to get auth token
-    logger.info('Logging in contributor...');
-    const contributorLoginResponse = await api.contributor.login({
-      email: 'test.contributor@example.com'
-    });
-
-    if (contributorLoginResponse.status !== 200) {
-      throw new Error(`Contributor login failed: ${contributorLoginResponse.data.message}`);
-    }
-    const contributorAuthToken = contributorLoginResponse.data.token;
-    logger.info('Contributor login successful');
-
-    // Test 1: Create submission
-    logger.info('Testing submission creation...');
-    const createResponse = await api.submission.create({
-      submission: {
-        taskId: taskId,
-        contributorId: contributorId,
-        walletAddress: testContributorWallet,
-        submissions: ['https://github.com/test-submission/repo'],
-        grading: null,
-        isAccepted: false
-      }
-    }, contributorAuthToken);
-
-    if (createResponse.status !== 201) {
-      throw new Error(`Submission creation failed: ${createResponse.data.message}`);
-    }
-    submissionId = createResponse.data.submission.id;
-    logger.info('Submission creation successful');
-
-    // Test 2: Fetch submission
-    logger.info('Testing submission retrieval...');
-    const submissionsResponse = await api.submission.fetchSubmissions(contributorAuthToken, taskId, contributorId, testContributorWallet);
-    assert.strictEqual(submissionsResponse.status, 200);
-    assert(Array.isArray(submissionsResponse.data.submissions));
-    assert(submissionsResponse.data.submissions.length > 0);
-    assert(submissionsResponse.data.submissions[0].taskId === taskId);
-    assert(submissionsResponse.data.submissions[0].walletAddress === testContributorWallet);
-    logger.info('Submission retrieval successful');
-
-    // Test 3: Delete submission
-    logger.info('Testing submission deletion...');
-    const deleteResponse = await api.submission.delete({
-      submissionId: submissionId
-    }, contributorAuthToken);
-
-    if (deleteResponse.status !== 200) {
-      throw new Error(`Submission deletion failed: ${deleteResponse.data.message}`);
-    }
-    logger.info('Submission deletion successful');
-
-    // Cleanup: Delete test task and contributor
-    await api.task.delete(taskId, sponsorAuthToken);
-    await api.contributor.delete(contributorId, contributorAuthToken);
-
-    return { status: 'passed' };
-  } catch (error) {
-    logger.error('Submission test failed:', error);
-    // Attempt cleanup even if tests fail
-    try {
-      if (submissionId) await api.submission.delete({ submissionId }, contributorAuthToken);
-      if (taskId) await api.task.delete(taskId, sponsorAuthToken);
-      if (contributorId) await api.contributor.delete(contributorId, contributorAuthToken);
-    } catch (cleanupError) {
-      logger.error('Cleanup after test failure encountered an error:', cleanupError);
-    }
-    return { status: 'failed', error };
-  }
-};
-
-async function cleanup(api) {
-  try {
-    // Clean up test contributor
-    if (contributorId) {
-      logger.info('Cleaning up test contributor...');
-      await api.contributor.delete(contributorId);
-      logger.info('Test contributor cleaned up successfully');
-    }
-
-    // Clean up test sponsor
-    if (sponsorId) {
-      logger.info('Cleaning up test sponsor...');
-      await api.sponsor.delete(sponsorId);
-      logger.info('Test sponsor cleaned up successfully');
-    }
-
-    // Clean up test task
-    if (taskId) {
-      logger.info('Cleaning up test task...');
-      await api.task.delete(taskId);
-      logger.info('Test task cleaned up successfully');
-    }
-  } catch (error) {
-    logger.error('Cleanup failed:', error.message);
-  }
+function generateUniqueEmail() {
+  const timestamp = Date.now();
+  return `test.integration.${timestamp}@example.com`;
 }
 
-module.exports = {
-  runSubmissionTests
-}; 
+function generateTestWalletAddress() {
+  return '5' + 'A'.repeat(47); // Simple valid Polkadot address for testing
+}
+
+function generateTestTaskId() {
+  return `task_${Date.now()}`;
+}
+
+describe('Submission Tests', () => {
+  let authToken;
+  let testContributor;
+  let testTask;
+
+  beforeAll(async () => {
+    await startTestServer();
+  });
+
+  afterAll(async () => {
+    await stopTestServer();
+  });
+
+  beforeEach(async () => {
+    // Clear any existing session
+    api.auth.clearSession();
+    
+    // Clear test collections
+    try {
+      await mongoose.connection.collection('contributors').deleteMany({});
+      await mongoose.connection.collection('tasks').deleteMany({});
+      await mongoose.connection.collection('submissions').deleteMany({});
+      logger.info('Cleared test collections');
+    } catch (error) {
+      logger.error('Error clearing collections:', error);
+    }
+
+    // Create a test contributor
+    const contributorData = {
+      basicInfo: {
+        email: generateUniqueEmail(),
+        displayName: 'Test Contributor',
+        bio: '',
+        profileImage: '',
+        joinDate: new Date(),
+        walletAddress: generateTestWalletAddress(),
+        website: '',
+        x: '',
+        discord: '',
+        telegram: ''
+      }
+    };
+    const contributorResponse = await api.contributor.register(contributorData);
+    testContributor = contributorResponse.data.contributor;
+
+    // Login as contributor
+    const loginResponse = await api.contributor.login({
+      email: testContributor.basicInfo.email
+    });
+    authToken = loginResponse.data.token;
+
+    // Create a test task
+    const taskData = {
+      task: {
+        id: generateTestTaskId(),
+        title: 'Test Task',
+        description: 'Test task description',
+        status: 'open',
+        reward: 100,
+        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        requirements: ['requirement1', 'requirement2'],
+        deliverables: ['deliverable1', 'deliverable2'],
+        skills: ['skill1', 'skill2'],
+        category: ['development'],
+        submissions: [],
+        sponsorId: testContributor.basicInfo.walletAddress, // Use the test contributor's wallet address
+        logo: 'https://example.com/logo.png',
+        postedTime: new Date(),
+        priority: 'medium',
+        timeCommitment: 'medium'
+      }
+    };
+    const taskResponse = await api.task.create(taskData, authToken);
+    testTask = taskResponse.data.task;
+  });
+
+  test('should create a new submission', async () => {
+    const submissionData = {
+      taskId: testTask.id,
+      walletAddress: testContributor.basicInfo.walletAddress,
+      submissionTime: new Date().toISOString(),
+      status: 'pending',
+      isAccepted: false
+    };
+
+    const response = await api.submission.create(submissionData, authToken);
+    expect(response.status).toBe(201);
+    expect(response.data).toHaveProperty('submission');
+    expect(response.data.submission.taskId).toBe(testTask.id);
+    expect(response.data.submission.walletAddress).toBe(testContributor.basicInfo.walletAddress);
+  });
+
+  test('should get submissions by task ID', async () => {
+    const response = await api.submission.list({ taskId: testTask.id });
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.data.submissions)).toBe(true);
+  });
+
+  test('should get submissions by wallet address', async () => {
+    const response = await api.submission.list({ walletAddress: testContributor.basicInfo.walletAddress });
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.data.submissions)).toBe(true);
+  });
+
+  test('should delete a submission', async () => {
+    // First create a submission to delete
+    const submissionData = {
+      taskId: testTask.id,
+      walletAddress: testContributor.basicInfo.walletAddress,
+      submissionTime: new Date().toISOString(),
+      status: 'pending',
+      isAccepted: false
+    };
+
+    const createResponse = await api.submission.create(submissionData, authToken);
+    expect(createResponse.status).toBe(201);
+    const submissionId = createResponse.data.submission.id;
+
+    // Then delete the submission
+    const deleteResponse = await api.submission.delete(submissionId, authToken);
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteResponse.data.message).toBe('Submission deleted successfully');
+
+    // Verify submission is deleted
+    const listResponse = await api.submission.list({ taskId: testTask.id });
+    expect(listResponse.data.submissions.find(s => s.id === submissionId)).toBeUndefined();
+  });
+
+  test('should not create submission for non-existent task', async () => {
+    const submissionData = {
+      taskId: 'non-existent-task-id',
+      walletAddress: testContributor.basicInfo.walletAddress,
+      submissionTime: new Date().toISOString(),
+      status: 'pending',
+      isAccepted: false
+    };
+
+    try {
+      await api.submission.create(submissionData, authToken);
+      fail('Expected an error but got success');
+    } catch (error) {
+      expect(error.response.status).toBe(404);
+      expect(error.response.data.message).toBe('Task not found not found');
+    }
+  });
+
+  test('should not create submission for closed task', async () => {
+    // Update task status to closed
+    const updateTaskData = {
+      task: {
+        ...testTask,
+        status: 'completed'
+      }
+    };
+    await api.task.update(testTask.id, updateTaskData, authToken);
+
+    const submissionData = {
+      taskId: testTask.id,
+      walletAddress: testContributor.basicInfo.walletAddress,
+      submissionTime: new Date().toISOString(),
+      status: 'pending',
+      isAccepted: false
+    };
+
+    try {
+      await api.submission.create(submissionData, authToken);
+      fail('Expected an error but got success');
+    } catch (error) {
+      expect(error.response.status).toBe(400);
+      expect(error.response.data.message).toBe('Task is not open for submissions');
+    }
+  });
+}); 

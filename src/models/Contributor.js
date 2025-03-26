@@ -6,7 +6,7 @@ const contributorSchema = new mongoose.Schema({
     displayName: { type: String, required: true },
     bio: { type: String, default: '' },
     profileImage: { type: String, default: '' },
-    joinDate: { type: String, default: () => new Date().toISOString() },
+    joinDate: { type: Date, default: Date.now },
     walletAddress: { type: String, default: '' },
     website: { type: String, default: '' },
     x: { type: String, default: '' },
@@ -76,8 +76,7 @@ const contributorSchema = new mongoose.Schema({
   },
   taskIds: [{ type: String }]
 }, {
-  timestamps: true,
-  strict: false // Allow additional fields
+  timestamps: true
 });
 
 // Indexes
@@ -87,5 +86,6 @@ contributorSchema.index({ 'skills.primarySkills.name': 1 });
 contributorSchema.index({ 'skills.secondarySkills.name': 1 });
 contributorSchema.index({ 'reputation.overallScore': -1 });
 contributorSchema.index({ 'contributionStats.totalTasksCompleted': -1 });
+contributorSchema.index({ 'basicInfo.joinDate': -1 });
 
 module.exports = mongoose.model('Contributor', contributorSchema); 

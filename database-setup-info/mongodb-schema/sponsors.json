@@ -1,21 +1,22 @@
 {
   "$jsonSchema": {
     "bsonType": "object",
-    "required": ["walletAddress", "name", "registeredAt"],
     "properties": {
       "walletAddress": { "bsonType": "string" },
       "verified": { "bsonType": "bool" },
       "name": { "bsonType": "string" },
       "logo": { "bsonType": "string" },
       "description": { "bsonType": "string" },
-      "website": { "bsonType": ["string", "null"] },
-      "x": { "bsonType": ["string", "null"] },
-      "discord": { "bsonType": ["string", "null"] },
-      "telegram": { "bsonType": ["string", "null"] },
-      "contactEmail": { "bsonType": ["string", "null"] },
+      "website": { "bsonType": "string" },
+      "x": { "bsonType": "string" },
+      "discord": { "bsonType": "string" },
+      "telegram": { "bsonType": "string" },
+      "contactEmail": { "bsonType": "string" },
       "categories": { "bsonType": "array", "items": { "bsonType": "string" } },
       "taskIds": { "bsonType": "array", "items": { "bsonType": "string" } },
-      "registeredAt": { "bsonType": "string" }
+      "registeredAt": { "bsonType": "date" },
+      "createdAt": { "bsonType": "date" },
+      "updatedAt": { "bsonType": "date" }
     }
   }
 }

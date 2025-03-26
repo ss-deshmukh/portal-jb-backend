@@ -1,15 +1,20 @@
+const logger = require('../utils/logger');
+
 const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-const validateWalletAddress = (wallet) => {
+const validateWalletAddress = (address) => {
   // Polkadot address validation
-  // - Starts with 1 or 5
-  // - Contains only base58 characters
-  // - Length between 47-48 characters
-  const walletRegex = /^[15][1-9A-HJ-NP-Za-km-z]{46,47}$/;
-  return walletRegex.test(wallet);
+  // Format: 5 or more characters, starting with 1 or 5, containing only base58 characters
+  const polkadotRegex = /^[15][1-9A-HJ-NP-Za-km-z]+$/;
+  
+  // Ethereum address validation
+  // Format: 0x followed by 40 hexadecimal characters
+  const ethereumRegex = /^0x[0-9a-fA-F]{40}$/;
+  
+  return polkadotRegex.test(address) || ethereumRegex.test(address);
 };
 
 const validateSkill = (skill) => {
@@ -28,20 +33,12 @@ const validateSkill = (skill) => {
 const validateSkillUpdate = (data) => {
   const errors = [];
 
-  // Validate id
-  if (!data.id) {
-    errors.push('Skill ID is required');
-  }
-
-  // Validate updated object
-  if (!data.updated || typeof data.updated !== 'object') {
-    errors.push('Updated data is required');
-  } else {
-    // Validate name in updated object
-    if (!data.updated.name || typeof data.updated.name !== 'string' || data.updated.name.trim().length === 0) {
-      errors.push('Updated skill name is required and must be a non-empty string');
-    } else if (data.updated.name.length > 100) {
-      errors.push('Updated skill name must be less than 100 characters');
+  // Validate name if provided
+  if (data.name) {
+    if (typeof data.name !== 'string' || data.name.trim().length === 0) {
+      errors.push('Skill name must be a non-empty string');
+    } else if (data.name.length > 100) {
+      errors.push('Skill name must be less than 100 characters');
     }
   }
 
@@ -166,20 +163,29 @@ const validateTask = (task, isUpdate = false) => {
     if (task.title && typeof task.title !== 'string') {
       errors.push('Task title must be a string');
     }
-    if (task.sponsorId && typeof task.sponsorId !== 'string') {
-      errors.push('Sponsor ID must be a string');
+    if (task.sponsorId && !validateWalletAddress(task.sponsorId)) {
+      errors.push('Invalid sponsor wallet address format');
     }
     if (task.description && typeof task.description !== 'string') {
       errors.push('Task description must be a string');
     }
-    if (task.deadline && typeof task.deadline !== 'string') {
-      errors.push('Task deadline must be a string');
+    if (task.deadline) {
+      const date = new Date(task.deadline);
+      if (isNaN(date)) {
+        errors.push('Task deadline must be a valid date');
+      }
     }
-    if (task.postedTime && typeof task.postedTime !== 'string') {
-      errors.push('Posted time must be a string');
+    if (task.postedTime) {
+      const date = new Date(task.postedTime);
+      if (isNaN(date)) {
+        errors.push('Posted time must be a valid date');
+      }
     }
     if (task.status && !['open', 'completed', 'cancelled'].includes(task.status)) {
       errors.push('Valid task status is required');
+    }
+    if (task.priority && !['low', 'medium', 'high', 'urgent'].includes(task.priority)) {
+      errors.push('Valid task priority is required');
     }
     if (task.logo && typeof task.logo !== 'string') {
       errors.push('Task logo must be a string');
@@ -187,55 +193,77 @@ const validateTask = (task, isUpdate = false) => {
     if (task.reward && typeof task.reward !== 'number') {
       errors.push('Reward value must be a number');
     }
-    if (task.maxAccepted && typeof task.maxAccepted !== 'number') {
-      errors.push('Max accepted value must be a number');
+    if (task.requirements && !Array.isArray(task.requirements)) {
+      errors.push('Requirements must be an array');
+    }
+    if (task.deliverables && !Array.isArray(task.deliverables)) {
+      errors.push('Deliverables must be an array');
+    }
+    if (task.category && !Array.isArray(task.category)) {
+      errors.push('Category must be an array');
+    }
+    if (task.skills && !Array.isArray(task.skills)) {
+      errors.push('Skills must be an array');
+    }
+    if (task.submissions && !Array.isArray(task.submissions)) {
+      errors.push('Submissions must be an array');
     }
   } else {
     // For creation, validate all required fields
     if (!task.title) {
       errors.push('Task title is required');
     }
-    if (!task.sponsorId) {
-      errors.push('Sponsor ID is required');
+    if (!task.sponsorId || !validateWalletAddress(task.sponsorId)) {
+      errors.push('Valid sponsor wallet address is required');
     }
     if (!task.description) {
       errors.push('Task description is required');
     }
     if (!task.deadline) {
       errors.push('Task deadline is required');
-    }
-    if (!task.postedTime) {
-      errors.push('Posted time is required');
-    }
-    if (!task.status || !['open', 'completed', 'cancelled'].includes(task.status)) {
-      errors.push('Valid task status is required');
+    } else {
+      const date = new Date(task.deadline);
+      if (isNaN(date)) {
+        errors.push('Task deadline must be a valid date');
+      }
     }
     if (!task.logo) {
       errors.push('Task logo is required');
     }
-    if (!task.reward || typeof task.reward !== 'number') {
+    if (typeof task.reward !== 'number') {
       errors.push('Reward value is required and must be a number');
     }
-    if (!task.maxAccepted || typeof task.maxAccepted !== 'number') {
-      errors.push('Max accepted value is required and must be a number');
+    if (!task.postedTime) {
+      errors.push('Posted time is required');
+    } else {
+      const date = new Date(task.postedTime);
+      if (isNaN(date)) {
+        errors.push('Posted time must be a valid date');
+      }
     }
-  }
-
-  // Validate optional fields if present
-  if (task.requirements && !Array.isArray(task.requirements)) {
-    errors.push('Requirements must be an array');
-  }
-  if (task.category && !Array.isArray(task.category)) {
-    errors.push('Category must be an array');
-  }
-  if (task.skills && !Array.isArray(task.skills)) {
-    errors.push('Skills must be an array');
-  }
-  if (task.priority && !['low', 'medium', 'high', 'urgent'].includes(task.priority)) {
-    errors.push('Invalid priority level');
-  }
-  if (task.submissions && !Array.isArray(task.submissions)) {
-    errors.push('Submissions must be an array');
+    if (!task.status || !['open', 'completed', 'cancelled'].includes(task.status)) {
+      errors.push('Valid task status is required');
+    }
+    // Validate arrays
+    if (!Array.isArray(task.requirements)) {
+      errors.push('Requirements must be an array');
+    }
+    if (!Array.isArray(task.deliverables)) {
+      errors.push('Deliverables must be an array');
+    } else if (task.deliverables.length === 0) {
+      errors.push('Deliverables array cannot be empty');
+    } else if (!task.deliverables.every(d => typeof d === 'string')) {
+      errors.push('All deliverables must be strings');
+    }
+    if (!Array.isArray(task.category)) {
+      errors.push('Category must be an array');
+    }
+    if (!Array.isArray(task.skills)) {
+      errors.push('Skills must be an array');
+    }
+    if (!Array.isArray(task.submissions)) {
+      errors.push('Submissions must be an array');
+    }
   }
 
   return errors;
@@ -244,6 +272,19 @@ const validateTask = (task, isUpdate = false) => {
 const validateSubmission = (submission) => {
   const errors = [];
 
+  logger.info('Validating submission:', {
+    submission,
+    hasTaskId: !!submission.taskId,
+    hasWalletAddress: !!submission.walletAddress,
+    hasSubmissionTime: !!submission.submissionTime,
+    hasStatus: !!submission.status,
+    hasIsAccepted: submission.isAccepted !== undefined,
+    isAcceptedType: typeof submission.isAccepted,
+    isAcceptedValue: submission.isAccepted,
+    rawSubmission: JSON.stringify(submission),
+    keys: Object.keys(submission)
+  });
+
   // Validate required fields
   if (!submission.taskId) {
     errors.push('Task ID is required');
@@ -251,24 +292,41 @@ const validateSubmission = (submission) => {
   if (!submission.walletAddress || !validateWalletAddress(submission.walletAddress)) {
     errors.push('Valid wallet address is required');
   }
-  if (!Array.isArray(submission.submissions)) {
-    errors.push('Submissions must be an array of strings');
+  if (!submission.submissionTime) {
+    errors.push('Submission time is required');
   } else {
-    submission.submissions.forEach((sub, index) => {
-      if (typeof sub !== 'string') {
-        errors.push(`Submission at index ${index} must be a string`);
-      }
-    });
-  }
-
-  // Validate optional fields if present
-  if (submission.grading !== undefined && submission.grading !== null) {
-    if (!Number.isInteger(submission.grading) || submission.grading < 0 || submission.grading > 10) {
-      errors.push('Grading must be an integer between 0 and 10');
+    const date = new Date(submission.submissionTime);
+    if (isNaN(date)) {
+      errors.push('Submission time must be a valid date');
     }
   }
+  if (!submission.status) {
+    errors.push('Status is required');
+  } else if (!['pending', 'accepted', 'rejected'].includes(submission.status)) {
+    errors.push('Invalid status value');
+  }
+  // Only validate isAccepted if it's provided and not the default value
   if (submission.isAccepted !== undefined && typeof submission.isAccepted !== 'boolean') {
-    errors.push('isAccepted must be a boolean value');
+    errors.push('isAccepted must be a boolean');
+  }
+
+  // Validate optional fields
+  if (submission.feedback && typeof submission.feedback !== 'string') {
+    errors.push('Feedback must be a string');
+  }
+  if (submission.rating !== undefined && submission.rating !== null) {
+    if (typeof submission.rating !== 'number' || submission.rating < 0 || submission.rating > 5) {
+      errors.push('Rating must be a number between 0 and 5');
+    }
+  }
+  if (submission.reviewTime) {
+    const date = new Date(submission.reviewTime);
+    if (isNaN(date)) {
+      errors.push('Review time must be a valid date');
+    }
+  }
+  if (submission.reviewerWalletAddress && !validateWalletAddress(submission.reviewerWalletAddress)) {
+    errors.push('Invalid reviewer wallet address format');
   }
 
   return errors;
@@ -364,31 +422,45 @@ const taskValidation = (req, res, next) => {
 
 const skillValidation = (req, res, next) => {
   const errors = validateSkill(req.body);
-  
   if (errors.length > 0) {
     return res.status(400).json({
       message: 'Validation failed',
       errors
     });
   }
-  
   next();
 };
 
 const skillUpdateValidation = (req, res, next) => {
   const errors = validateSkillUpdate(req.body);
-  
   if (errors.length > 0) {
     return res.status(400).json({
       message: 'Validation failed',
       errors
     });
   }
-  
   next();
 };
 
 const submissionValidation = (req, res, next) => {
+  logger.info('Submission validation middleware - Request body:', {
+    body: req.body,
+    hasSubmission: !!req.body.submission,
+    contentType: req.headers['content-type'],
+    submissionData: req.body.submission,
+    isAccepted: req.body.submission?.isAccepted,
+    isAcceptedType: typeof req.body.submission?.isAccepted,
+    isAcceptedValue: req.body.submission?.isAccepted,
+    rawBody: JSON.stringify(req.body)
+  });
+  
+  if (!req.body.submission) {
+    return res.status(400).json({
+      message: 'Validation failed',
+      errors: ['Submission data is required']
+    });
+  }
+  
   const errors = validateSubmission(req.body.submission);
   
   if (errors.length > 0) {

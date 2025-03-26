@@ -1,0 +1,282 @@
+[
+  {
+    "id": "task_001",
+    "title": "Smart Contract Security Audit",
+    "sponsorId": "0x4444444444444444444444444444444444444444",
+    "logo": "https://example.com/logos/ethereum-foundation.png",
+    "description": "Conduct a comprehensive security audit of a new DeFi protocol",
+    "requirements": [
+      "Expert knowledge of smart contract security",
+      "Experience with DeFi protocols",
+      "Familiarity with common vulnerabilities"
+    ],
+    "deliverables": [
+      "Detailed security audit report",
+      "Vulnerability assessment",
+      "Recommendations for improvements"
+    ],
+    "deadline": "2024-02-01T00:00:00Z",
+    "reward": 5000,
+    "postedTime": "2024-01-01T00:00:00Z",
+    "status": "completed",
+    "priority": "high",
+    "category": ["Smart Contracts", "Security"],
+    "skills": ["Smart Contracts", "Security"],
+    "submissions": ["submission_001", "submission_004"],
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-23T18:00:00Z"
+  },
+  {
+    "id": "task_002",
+    "title": "NFT Marketplace UI Design",
+    "sponsorId": "0x5555555555555555555555555555555555555555",
+    "logo": "https://example.com/logos/uniswap.png",
+    "description": "Design a modern and user-friendly interface for an NFT marketplace",
+    "requirements": [
+      "Strong UI/UX design skills",
+      "Experience with Web3 applications",
+      "Knowledge of NFT standards"
+    ],
+    "deliverables": [
+      "High-fidelity UI designs",
+      "User flow documentation",
+      "Interactive prototype"
+    ],
+    "deadline": "2024-02-15T00:00:00Z",
+    "reward": 3000,
+    "postedTime": "2024-01-02T00:00:00Z",
+    "status": "completed",
+    "priority": "medium",
+    "category": ["UI/UX Design", "NFT"],
+    "skills": ["UI/UX Design", "Frontend Development"],
+    "submissions": ["submission_002"],
+    "createdAt": "2024-01-02T00:00:00Z",
+    "updatedAt": "2024-01-21T16:00:00Z"
+  },
+  {
+    "id": "task_003",
+    "title": "DeFi Dashboard Frontend",
+    "sponsorId": "0x5555555555555555555555555555555555555555",
+    "logo": "https://example.com/logos/uniswap.png",
+    "description": "Develop a responsive frontend for a DeFi analytics dashboard",
+    "requirements": [
+      "React/Next.js expertise",
+      "Web3 integration experience",
+      "Data visualization skills"
+    ],
+    "deliverables": [
+      "Responsive dashboard interface",
+      "Real-time data integration",
+      "Interactive charts and graphs"
+    ],
+    "deadline": "2024-02-20T00:00:00Z",
+    "reward": 4000,
+    "postedTime": "2024-01-02T00:00:00Z",
+    "status": "completed",
+    "priority": "high",
+    "category": ["Frontend Development", "DeFi"],
+    "skills": ["Frontend Development", "UI/UX Design"],
+    "submissions": ["submission_003"],
+    "createdAt": "2024-01-02T00:00:00Z",
+    "updatedAt": "2024-01-22T17:00:00Z"
+  },
+  {
+    "id": "task_004",
+    "title": "Layer 2 Scaling Research",
+    "sponsorId": "0x4444444444444444444444444444444444444444",
+    "logo": "https://example.com/logos/ethereum-foundation.png",
+    "description": "Research and analyze Layer 2 scaling solutions",
+    "requirements": [
+      "Deep understanding of blockchain scaling",
+      "Research experience",
+      "Technical writing skills"
+    ],
+    "deliverables": [
+      "Comprehensive research report",
+      "Technical analysis",
+      "Recommendations"
+    ],
+    "deadline": "2024-02-10T00:00:00Z",
+    "reward": 6000,
+    "postedTime": "2024-01-01T00:00:00Z",
+    "status": "completed",
+    "priority": "high",
+    "category": ["Layer 2", "Research"],
+    "skills": ["Layer 2", "Research"],
+    "submissions": ["submission_004"],
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-23T18:00:00Z"
+  },
+  {
+    "id": "task_005",
+    "title": "NFT Smart Contract Development",
+    "sponsorId": "0x6666666666666666666666666666666666666666",
+    "logo": "https://example.com/logos/opensea.png",
+    "description": "Develop an optimized NFT smart contract",
+    "requirements": [
+      "Solidity expertise",
+      "NFT standards knowledge",
+      "Gas optimization skills"
+    ],
+    "deliverables": [
+      "Optimized smart contract",
+      "Documentation",
+      "Test coverage"
+    ],
+    "deadline": "2024-02-25T00:00:00Z",
+    "reward": 3500,
+    "postedTime": "2024-01-03T00:00:00Z",
+    "status": "completed",
+    "priority": "medium",
+    "category": ["Smart Contracts", "NFT"],
+    "skills": ["Smart Contracts", "NFT"],
+    "submissions": ["submission_005"],
+    "createdAt": "2024-01-03T00:00:00Z",
+    "updatedAt": "2024-01-24T19:00:00Z"
+  },
+  {
+    "id": "task_006",
+    "title": "DeFi Protocol UI/UX Design",
+    "sponsorId": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "logo": "https://example.com/logos/uniswap.png",
+    "description": "Design a modern and intuitive user interface for a new DeFi protocol. Focus on creating a seamless experience for trading, providing liquidity, and managing positions.",
+    "requirements": [
+      "Strong portfolio of DeFi/Web3 UI/UX designs",
+      "Experience with responsive design",
+      "Understanding of DeFi concepts and user flows",
+      "Proficiency in Figma or similar tools"
+    ],
+    "deliverables": [
+      "Complete UI/UX design system",
+      "Interactive prototype",
+      "User flow documentation",
+      "Responsive design specifications"
+    ],
+    "deadline": "2024-05-15T23:59:59Z",
+    "reward": 4000,
+    "postedTime": "2024-03-05T09:00:00Z",
+    "status": "open",
+    "priority": "medium",
+    "category": ["UI/UX", "Frontend"],
+    "skills": ["UI/UX Design", "Frontend Development"],
+    "submissions": [],
+    "createdAt": "2024-03-05T09:00:00Z",
+    "updatedAt": "2024-03-05T09:00:00Z"
+  },
+  {
+    "id": "task_007",
+    "title": "NFT Marketplace Integration",
+    "sponsorId": "0x9876543210abcdef1234567890abcdef12345678",
+    "logo": "https://example.com/logos/opensea.png",
+    "description": "Develop a seamless integration between an existing NFT marketplace and a new blockchain network. Focus on optimizing performance and ensuring cross-chain compatibility.",
+    "requirements": [
+      "Experience with NFT standards and protocols",
+      "Knowledge of cross-chain bridging",
+      "Proficiency in smart contract development",
+      "Understanding of marketplace architecture"
+    ],
+    "deliverables": [
+      "Integration implementation",
+      "Performance optimization report",
+      "Testing documentation",
+      "Deployment guide"
+    ],
+    "deadline": "2024-05-30T23:59:59Z",
+    "reward": 6000,
+    "postedTime": "2024-03-10T11:00:00Z",
+    "status": "open",
+    "priority": "high",
+    "category": ["NFT", "Frontend"],
+    "skills": ["NFT", "Smart Contracts", "Frontend Development"],
+    "submissions": [],
+    "createdAt": "2024-03-10T11:00:00Z",
+    "updatedAt": "2024-03-10T11:00:00Z"
+  },
+  {
+    "id": "task_008",
+    "title": "Oracle Network Enhancement",
+    "sponsorId": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "logo": "https://example.com/logos/chainlink.png",
+    "description": "Enhance the reliability and efficiency of an oracle network by implementing new data sources and improving the consensus mechanism.",
+    "requirements": [
+      "Deep understanding of oracle networks",
+      "Experience with consensus mechanisms",
+      "Knowledge of data aggregation",
+      "Proficiency in smart contract development"
+    ],
+    "deliverables": [
+      "Enhanced oracle implementation",
+      "Performance benchmarks",
+      "Security analysis",
+      "Documentation"
+    ],
+    "deadline": "2024-06-15T23:59:59Z",
+    "reward": 7000,
+    "postedTime": "2024-03-15T10:00:00Z",
+    "status": "open",
+    "priority": "high",
+    "category": ["Smart Contracts", "Security"],
+    "skills": ["Smart Contracts", "Security", "Research"],
+    "submissions": [],
+    "createdAt": "2024-03-15T10:00:00Z",
+    "updatedAt": "2024-03-15T10:00:00Z"
+  },
+  {
+    "id": "task_009",
+    "title": "Layer 2 Performance Optimization",
+    "sponsorId": "0x1234567890abcdef1234567890abcdef12345678",
+    "logo": "https://example.com/logos/optimism.png",
+    "description": "Optimize the performance of a Layer 2 solution by improving transaction throughput, reducing latency, and optimizing gas usage.",
+    "requirements": [
+      "Expert knowledge of Layer 2 solutions",
+      "Experience with performance optimization",
+      "Understanding of blockchain architecture",
+      "Proficiency in smart contract development"
+    ],
+    "deliverables": [
+      "Optimized implementation",
+      "Performance benchmarks",
+      "Gas optimization report",
+      "Documentation"
+    ],
+    "deadline": "2024-08-30T23:59:59Z",
+    "reward": 5500,
+    "postedTime": "2024-04-05T11:00:00Z",
+    "status": "open",
+    "priority": "high",
+    "category": ["Layer 2", "Research"],
+    "skills": ["Layer 2", "Smart Contracts", "Research"],
+    "submissions": [],
+    "createdAt": "2024-04-05T11:00:00Z",
+    "updatedAt": "2024-04-05T11:00:00Z"
+  },
+  {
+    "id": "task_010",
+    "title": "Decentralized Identity System",
+    "sponsorId": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "logo": "https://example.com/logos/3box.png",
+    "description": "Develop a decentralized identity system that enables users to manage their digital identities across different platforms and services.",
+    "requirements": [
+      "Experience with identity systems",
+      "Knowledge of DID standards",
+      "Proficiency in smart contract development",
+      "Understanding of privacy principles"
+    ],
+    "deliverables": [
+      "Identity system implementation",
+      "Integration examples",
+      "Security analysis",
+      "User documentation"
+    ],
+    "deadline": "2024-09-15T23:59:59Z",
+    "reward": 6000,
+    "postedTime": "2024-04-10T10:00:00Z",
+    "status": "open",
+    "priority": "high",
+    "category": ["Identity", "Security"],
+    "skills": ["Identity", "Smart Contracts", "Security"],
+    "submissions": [],
+    "createdAt": "2024-04-10T10:00:00Z",
+    "updatedAt": "2024-04-10T10:00:00Z"
+  }
+] 

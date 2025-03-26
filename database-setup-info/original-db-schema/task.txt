@@ -5,6 +5,7 @@
   logo: { type: String, required: true },
   description: { type: String, required: true },
   requirements: [{ type: String }],
+  deliverables: [{ type: String }],
   deadline: { type: Date, required: true },
   reward: { type: Number, required: true },
   postedTime: { type: Date, default: Date.now },

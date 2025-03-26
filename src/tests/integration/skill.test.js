@@ -1,116 +1,254 @@
 const logger = require('../../utils/logger');
 const crypto = require('crypto');
+const api = require('./testClient');
+const { startTestServer, stopTestServer } = require('./testServer');
+const mongoose = require('mongoose');
 
-const generateWalletAddress = () => {
-  // Generate a base58 string that starts with '5' and is 47-48 characters long
-  const bytes = crypto.randomBytes(32);
-  const base58Chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-  let address = '5';
-  for (let i = 0; i < 46; i++) {
-    address += base58Chars[Math.floor(Math.random() * base58Chars.length)];
-  }
-  return address;
+// Generate a random skill ID
+const generateSkillId = () => {
+  return crypto.randomBytes(16).toString('hex');
 };
 
-const runSkillTests = async (api) => {
-  let skillId;
-  let sponsorId;
-  const walletAddress = generateWalletAddress();
+// Generate test skill data
+const generateTestSkillData = () => {
+  return {
+    name: `Test Skill ${Date.now()}`
+  };
+};
 
-  try {
-    // Register and login sponsor
-    logger.info('Registering test sponsor...');
-    const registerResponse = await api.sponsor.register({
-      profile: {
-        walletAddress,
-        name: 'Test Sponsor',
-        logo: 'https://example.com/logo.png',
-        description: 'Test sponsor for integration tests',
-        website: 'https://example.com',
-        x: 'https://x.com/test',
-        discord: 'https://discord.gg/test',
-        telegram: 'https://t.me/test',
-        contactEmail: 'test@example.com',
-        categories: ['development', 'testing'],
-        taskIds: []
+describe('Skill Tests', () => {
+  let testSkillId;
+  let adminId;
+
+  beforeAll(async () => {
+    await startTestServer();
+    // Create a test admin user
+    adminId = new mongoose.Types.ObjectId();
+  });
+
+  afterAll(async () => {
+    await stopTestServer();
+  });
+
+  beforeEach(async () => {
+    await api.auth.clearSession();
+  });
+
+  afterEach(async () => {
+    // Clean up test data
+    if (testSkillId) {
+      try {
+        await api.skill.delete(testSkillId);
+      } catch (error) {
+        logger.error('Failed to clean up test skill:', error);
+      }
+    }
+  });
+
+  describe('Public Endpoints', () => {
+    it('should get all skills', async () => {
+      try {
+        const response = await api.skill.getAll();
+        expect(response.status).toBe(200);
+        expect(response.data).toHaveProperty('skills');
+        expect(Array.isArray(response.data.skills)).toBe(true);
+      } catch (error) {
+        if (error.response) {
+          throw new Error(`Failed to get skills: ${error.response.data.message}`);
+        }
+        throw new Error(`Failed to get skills: ${error.message}`);
       }
     });
 
-    if (registerResponse.status !== 201) {
-      throw new Error(`Sponsor registration failed: ${registerResponse.data.message}`);
-    }
-    sponsorId = registerResponse.data.sponsor.id;
-    logger.info('Sponsor registration successful');
+    it('should get a skill by ID', async () => {
+      try {
+        // First set up admin session to create a skill
+        await api.auth.setSession({
+          id: adminId.toString(),
+          email: 'admin@example.com',
+          role: 'admin',
+          permissions: ['manage:skills']
+        });
 
-    // Login sponsor
-    logger.info('Logging in sponsor...');
-    const loginResponse = await api.sponsor.login({
-      walletAddress
+        // Create a test skill
+        const skillData = generateTestSkillData();
+        const createResponse = await api.skill.create(skillData);
+        const skillId = createResponse.data.skill.id;
+
+        // Clear session to test as public user
+        await api.auth.clearSession();
+
+        // Now try to get the skill by ID as a public user
+        const response = await api.skill.getById(skillId);
+        expect(response.status).toBe(200);
+        expect(response.data).toHaveProperty('skill');
+        expect(response.data.skill.id).toBe(skillId);
+        expect(response.data.skill.name).toBe(skillData.name);
+
+        // Clean up the test skill
+        await api.auth.setSession({
+          id: adminId.toString(),
+          email: 'admin@example.com',
+          role: 'admin',
+          permissions: ['manage:skills']
+        });
+        await api.skill.delete(skillId);
+      } catch (error) {
+        if (error.response) {
+          throw new Error(`Failed to get skill: ${error.response.data.message}`);
+        }
+        throw new Error(`Failed to get skill: ${error.message}`);
+      }
+    });
+  });
+
+  describe('Protected Endpoints (Admin Only)', () => {
+    beforeEach(async () => {
+      // Set up admin session
+      await api.auth.setSession({
+        id: adminId.toString(),
+        email: 'admin@example.com',
+        role: 'admin',
+        permissions: ['manage:skills']
+      });
     });
 
-    if (loginResponse.status !== 200) {
-      throw new Error(`Sponsor login failed: ${loginResponse.data.message}`);
-    }
-    const token = loginResponse.data.token;
-    logger.info('Sponsor login successful');
-
-    // Test 1: Create skill
-    logger.info('Testing skill creation...');
-    const createResponse = await api.skill.create({
-      name: `Integration Test Skill ${Date.now()}`
-    }, token);
-
-    if (createResponse.status !== 201) {
-      throw new Error(`Skill creation failed: ${createResponse.data.message}`);
-    }
-    skillId = createResponse.data.skill.id;
-    logger.info('Skill creation successful');
-
-    // Test 2: Get skill
-    logger.info('Testing skill retrieval...');
-    const getResponse = await api.skill.get(skillId, token);
-
-    if (getResponse.status !== 200) {
-      throw new Error(`Skill retrieval failed: ${getResponse.data.message}`);
-    }
-    logger.info('Skill retrieval successful');
-
-    // Test 3: Update skill
-    logger.info('Testing skill update...');
-    const updateResponse = await api.skill.update(skillId, {
-      updated: {
-        name: `Updated Integration Test Skill ${Date.now()}`
+    it('should create a new skill', async () => {
+      try {
+        const skillData = generateTestSkillData();
+        const response = await api.skill.create(skillData);
+        expect(response.status).toBe(201);
+        expect(response.data).toHaveProperty('message');
+        expect(response.data).toHaveProperty('skill');
+        expect(response.data.skill.name).toBe(skillData.name);
+        testSkillId = response.data.skill.id;
+      } catch (error) {
+        if (error.response) {
+          throw new Error(`Failed to create skill: ${error.response.data.message}`);
+        }
+        throw new Error(`Failed to create skill: ${error.message}`);
       }
-    }, token);
+    });
 
-    if (updateResponse.status !== 200) {
-      throw new Error(`Skill update failed: ${updateResponse.data.message}`);
-    }
-    logger.info('Skill update successful');
+    it('should update an existing skill', async () => {
+      try {
+        // First create a skill to update
+        const createResponse = await api.skill.create(generateTestSkillData());
+        testSkillId = createResponse.data.skill.id;
 
-    // Test 4: Delete skill
-    logger.info('Testing skill deletion...');
-    const deleteResponse = await api.skill.delete(skillId, token);
+        // Update the skill
+        const updateData = {
+          name: `Updated Skill ${Date.now()}`
+        };
 
-    if (deleteResponse.status !== 200) {
-      throw new Error(`Skill deletion failed: ${deleteResponse.data.message}`);
-    }
-    logger.info('Skill deletion successful');
+        const response = await api.skill.update(testSkillId, updateData);
+        expect(response.status).toBe(200);
+        expect(response.data).toHaveProperty('message');
+        expect(response.data).toHaveProperty('skill');
+        expect(response.data.skill.name).toBe(updateData.name);
+      } catch (error) {
+        if (error.response) {
+          throw new Error(`Failed to update skill: ${error.response.data.message}`);
+        }
+        throw new Error(`Failed to update skill: ${error.message}`);
+      }
+    });
 
-    return { status: 'passed' };
-  } catch (error) {
-    logger.error('Skill test failed:', error);
-    // Attempt cleanup even if tests fail
-    try {
-      if (skillId) await api.skill.delete(skillId);
-      if (sponsorId) await api.sponsor.delete(sponsorId);
-    } catch (cleanupError) {
-      logger.error('Cleanup after test failure encountered an error:', cleanupError);
-    }
-    return { status: 'failed', error };
-  }
-};
+    it('should delete a skill', async () => {
+      try {
+        // First create a skill to delete
+        const createResponse = await api.skill.create(generateTestSkillData());
+        testSkillId = createResponse.data.skill.id;
 
-module.exports = {
-  runSkillTests
-}; 
+        // Delete the skill
+        const response = await api.skill.delete(testSkillId);
+        expect(response.status).toBe(200);
+        expect(response.data).toHaveProperty('message');
+
+        // Verify the skill is deleted
+        try {
+          await api.skill.getById(testSkillId);
+          throw new Error('Skill still exists after deletion');
+        } catch (error) {
+          expect(error.response.status).toBe(404);
+        }
+      } catch (error) {
+        if (error.response) {
+          throw new Error(`Failed to delete skill: ${error.response.data.message}`);
+        }
+        throw new Error(`Failed to delete skill: ${error.message}`);
+      }
+    });
+  });
+
+  describe('Authorization Tests', () => {
+    it('should not allow non-admin users to create skills', async () => {
+      try {
+        // Set up regular user session
+        await api.auth.setSession({
+          id: new mongoose.Types.ObjectId().toString(),
+          email: 'user@example.com',
+          role: 'user',
+          permissions: []
+        });
+
+        const skillData = generateTestSkillData();
+        await api.skill.create(skillData);
+        throw new Error('Expected unauthorized error');
+      } catch (error) {
+        expect(error.response.status).toBe(403);
+      }
+    });
+
+    it('should not allow non-admin users to update skills', async () => {
+      try {
+        // Set up regular user session
+        await api.auth.setSession({
+          id: new mongoose.Types.ObjectId().toString(),
+          email: 'user@example.com',
+          role: 'user',
+          permissions: []
+        });
+
+        // First get a valid skill ID
+        const allSkillsResponse = await api.skill.getAll();
+        const skillId = allSkillsResponse.data.skills[0]?.id;
+
+        if (!skillId) {
+          throw new Error('No skills found in the database');
+        }
+
+        const updateData = generateTestSkillData();
+        await api.skill.update(skillId, updateData);
+        throw new Error('Expected unauthorized error');
+      } catch (error) {
+        expect(error.response.status).toBe(403);
+      }
+    });
+
+    it('should not allow non-admin users to delete skills', async () => {
+      try {
+        // Set up regular user session
+        await api.auth.setSession({
+          id: new mongoose.Types.ObjectId().toString(),
+          email: 'user@example.com',
+          role: 'user',
+          permissions: []
+        });
+
+        // First get a valid skill ID
+        const allSkillsResponse = await api.skill.getAll();
+        const skillId = allSkillsResponse.data.skills[0]?.id;
+
+        if (!skillId) {
+          throw new Error('No skills found in the database');
+        }
+
+        await api.skill.delete(skillId);
+        throw new Error('Expected unauthorized error');
+      } catch (error) {
+        expect(error.response.status).toBe(403);
+      }
+    });
+  });
+}); 
