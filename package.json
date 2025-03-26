@@ -10,12 +10,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:api": "cross-env NODE_ENV=test node src/scripts/testApi.js",
     "test:integration": "cross-env NODE_ENV=production ALLOW_PRODUCTION_TESTS=true node src/scripts/runIntegrationTests.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "build": "echo 'No build step required'",
-    "postinstall": "echo 'No postinstall step required'"
+    "lint:fix": "eslint . --fix"
   },
   "engines": {
     "node": ">=18.0.0"
