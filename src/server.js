@@ -17,6 +17,11 @@ const cookieParser = require('cookie-parser');
 if (process.env.NODE_ENV === 'production') {
   // In production, we don't need to load .env file as Railway provides environment variables
   console.log('Running in production mode');
+  console.log('Checking specific environment variables:');
+  console.log('MONGO_URI_PROD exists:', !!process.env.MONGO_URI_PROD);
+  console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+  console.log('AUTH_SECRET exists:', !!process.env.AUTH_SECRET);
+  console.log('All environment variables:', process.env);
 } else {
   dotenv.config();
 }
@@ -30,6 +35,10 @@ if (missingEnvVars.length > 0) {
   console.error('Missing required environment variables:', missingEnvVars.join(', '));
   console.error('Current environment:', process.env.NODE_ENV);
   console.error('Available environment variables:', Object.keys(process.env).join(', '));
+  console.error('Environment variable values:');
+  requiredEnvVars.forEach(varName => {
+    console.error(`${varName}: ${process.env[varName] || 'undefined'}`);
+  });
   process.exit(1);
 }
 
