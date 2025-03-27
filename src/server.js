@@ -30,13 +30,20 @@ if (process.env.RAILWAY_ENVIRONMENT === 'production') {
   
   if (missingVars.length > 0) {
     console.log('\nMissing required variables:', missingVars.join(', '));
-    console.log('Attempting to load from .env file...');
-    dotenv.config();
+    console.log('Attempting to load from .env.production file...');
     
-    // Check again after loading .env
+    // Load .env.production file
+    const result = dotenv.config({ path: '.env.production' });
+    if (result.error) {
+      console.error('Error loading .env.production:', result.error);
+    } else {
+      console.log('Successfully loaded .env.production');
+    }
+    
+    // Check again after loading .env.production
     const stillMissing = requiredVars.filter(varName => !process.env[varName]);
     if (stillMissing.length > 0) {
-      console.error('Required variables still missing after loading .env:', stillMissing.join(', '));
+      console.error('Required variables still missing after loading .env.production:', stillMissing.join(', '));
       console.error('Please ensure these variables are set in Railway environment variables');
       process.exit(1);
     }

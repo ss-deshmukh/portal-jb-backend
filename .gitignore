@@ -10,7 +10,7 @@ yarn-error.log*
 .env.*.local
 .env.development
 .env.test
-.env.production
+# .env.production  # Commented out to allow committing production environment variables
 
 # Logs
 logs/
