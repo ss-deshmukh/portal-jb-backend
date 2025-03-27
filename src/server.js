@@ -49,6 +49,13 @@ const requiredEnvVars = ['MONGO_URI_PROD', 'PORT', 'JWT_SECRET', 'AUTH_SECRET'];
 const missingEnvVars = requiredEnvVars.filter(key => !envVars[key]);
 
 if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('Current environment:', process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV);
+  console.error('Available environment variables:', Object.keys(process.env).join(', '));
+  console.error('\nEnvironment variable values:');
+  requiredEnvVars.forEach(varName => {
+    console.error(`${varName}: ${varName.includes('SECRET') ? '****' : process.env[varName]}`);
+  });
   throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 }
 
