@@ -1,7 +1,6 @@
 const logger = require('../../utils/logger');
 const crypto = require('crypto');
 const api = require('./testClient');
-const { startTestServer, stopTestServer } = require('./testServer');
 const mongoose = require('mongoose');
 
 // Generate a random skill ID
@@ -21,13 +20,8 @@ describe('Skill Tests', () => {
   let adminId;
 
   beforeAll(async () => {
-    await startTestServer();
     // Create a test admin user
     adminId = new mongoose.Types.ObjectId();
-  });
-
-  afterAll(async () => {
-    await stopTestServer();
   });
 
   beforeEach(async () => {
@@ -202,7 +196,18 @@ describe('Skill Tests', () => {
 
     it('should not allow non-admin users to update skills', async () => {
       try {
-        // Set up regular user session
+        // First create a skill as admin
+        await api.auth.setSession({
+          id: adminId.toString(),
+          email: 'admin@example.com',
+          role: 'admin',
+          permissions: ['manage:skills']
+        });
+
+        const createResponse = await api.skill.create(generateTestSkillData());
+        testSkillId = createResponse.data.skill.id;
+
+        // Try to update as regular user
         await api.auth.setSession({
           id: new mongoose.Types.ObjectId().toString(),
           email: 'user@example.com',
@@ -210,16 +215,7 @@ describe('Skill Tests', () => {
           permissions: []
         });
 
-        // First get a valid skill ID
-        const allSkillsResponse = await api.skill.getAll();
-        const skillId = allSkillsResponse.data.skills[0]?.id;
-
-        if (!skillId) {
-          throw new Error('No skills found in the database');
-        }
-
-        const updateData = generateTestSkillData();
-        await api.skill.update(skillId, updateData);
+        await api.skill.update(testSkillId, { name: 'Updated by User' });
         throw new Error('Expected unauthorized error');
       } catch (error) {
         expect(error.response.status).toBe(403);
@@ -228,7 +224,18 @@ describe('Skill Tests', () => {
 
     it('should not allow non-admin users to delete skills', async () => {
       try {
-        // Set up regular user session
+        // First create a skill as admin
+        await api.auth.setSession({
+          id: adminId.toString(),
+          email: 'admin@example.com',
+          role: 'admin',
+          permissions: ['manage:skills']
+        });
+
+        const createResponse = await api.skill.create(generateTestSkillData());
+        testSkillId = createResponse.data.skill.id;
+
+        // Try to delete as regular user
         await api.auth.setSession({
           id: new mongoose.Types.ObjectId().toString(),
           email: 'user@example.com',
@@ -236,15 +243,7 @@ describe('Skill Tests', () => {
           permissions: []
         });
 
-        // First get a valid skill ID
-        const allSkillsResponse = await api.skill.getAll();
-        const skillId = allSkillsResponse.data.skills[0]?.id;
-
-        if (!skillId) {
-          throw new Error('No skills found in the database');
-        }
-
-        await api.skill.delete(skillId);
+        await api.skill.delete(testSkillId);
         throw new Error('Expected unauthorized error');
       } catch (error) {
         expect(error.response.status).toBe(403);

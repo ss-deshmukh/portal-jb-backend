@@ -1,6 +1,5 @@
 const logger = require('../../utils/logger');
 const api = require('./testClient');
-const { startTestServer, stopTestServer } = require('./testServer');
 const mongoose = require('mongoose');
 
 function generateUniqueEmail() {
@@ -20,14 +19,6 @@ describe('Submission Tests', () => {
   let authToken;
   let testContributor;
   let testTask;
-
-  beforeAll(async () => {
-    await startTestServer();
-  });
-
-  afterAll(async () => {
-    await stopTestServer();
-  });
 
   beforeEach(async () => {
     // Clear any existing session

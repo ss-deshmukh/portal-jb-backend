@@ -36,34 +36,40 @@ const checkEnvironmentSafety = () => {
   }
 };
 
-describe('Integration Tests', () => {
-  beforeAll(async () => {
-    // Safety checks
-    checkEnvironmentSafety();
-    
-    // Initialize metrics
-    initializeTestMetrics();
-    
-    // Start test server
-    console.info('Starting test server...');
-    await startTestServer();
-    console.info('Test server started successfully');
-  });
+// Start server before all tests
+let server;
+beforeAll(async () => {
+  // Safety checks
+  checkEnvironmentSafety();
+  
+  // Initialize metrics
+  initializeTestMetrics();
+  
+  // Start test server
+  console.info('Starting test server...');
+  server = await startTestServer();
+  console.info('Test server started successfully');
+  
+  // Make server available globally for test files
+  global.__TEST_SERVER__ = server;
+});
 
-  afterAll(async () => {
-    // Generate report
-    generateReport();
+afterAll(async () => {
+  // Generate report
+  generateReport();
 
-    // Stop test server
-    await stopTestServer();
-    console.info('Test server stopped');
-  });
+  // Stop test server
+  await stopTestServer();
+  console.info('Test server stopped');
+  
+  // Clean up global reference
+  delete global.__TEST_SERVER__;
+});
 
-  // Import and run test suites
-  require('./auth.test');
-  require('./contributor.test');
-  require('./sponsor.test');
-  require('./task.test');
-  require('./skill.test');
-  require('./submission.test');
-}); 
+// Import test suites
+describe('Auth Tests', () => require('./auth.test'));
+describe('Contributor Tests', () => require('./contributor.test'));
+describe('Sponsor Tests', () => require('./sponsor.test'));
+describe('Task Tests', () => require('./task.test'));
+describe('Skill Tests', () => require('./skill.test'));
+describe('Submission Tests', () => require('./submission.test')); 

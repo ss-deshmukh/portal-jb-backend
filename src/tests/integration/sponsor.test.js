@@ -1,6 +1,5 @@
 const api = require('./testClient');
 const logger = require('../../utils/logger');
-const { startTestServer, stopTestServer } = require('./testServer');
 
 function generateTestWalletAddress() {
   // Generate a valid Polkadot address format
@@ -15,18 +14,6 @@ function generateTestWalletAddress() {
 
 describe('Sponsor Tests', () => {
   let testSponsor;
-
-  beforeAll(async () => {
-    // Setup before all tests
-    logger.info('Starting sponsor tests...');
-    await startTestServer();
-  });
-
-  afterAll(async () => {
-    // Cleanup after all tests
-    await stopTestServer();
-    logger.info('Completed sponsor tests');
-  });
 
   beforeEach(async () => {
     // Clear any existing sessions before each test

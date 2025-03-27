@@ -1,6 +1,5 @@
 const logger = require('../../utils/logger');
 const api = require('./testClient');
-const { startTestServer, stopTestServer } = require('./testServer');
 
 const generateUniqueWalletAddress = () => {
   // Base58 characters (excluding 0, O, I, l)
@@ -16,14 +15,6 @@ const generateUniqueWalletAddress = () => {
 describe('Task Tests', () => {
   let testSponsor;
   let authToken;
-
-  beforeAll(async () => {
-    await startTestServer();
-  });
-
-  afterAll(async () => {
-    await stopTestServer();
-  });
 
   beforeEach(async () => {
     // Clear any existing session
@@ -203,5 +194,12 @@ describe('Task Tests', () => {
     const deleteResponse = await api.task.delete(taskId, authToken);
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.data.message).toBe('Task deleted successfully');
+
+    // Verify task is deleted
+    try {
+      await api.task.get(taskId);
+    } catch (error) {
+      expect(error.response.status).toBe(404);
+    }
   });
 }); 

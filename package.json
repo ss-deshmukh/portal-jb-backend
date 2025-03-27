@@ -12,7 +12,9 @@
     "test:coverage": "jest --coverage",
     "test:integration": "cross-env NODE_ENV=production ALLOW_PRODUCTION_TESTS=true node src/scripts/runIntegrationTests.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "railway:secrets:sync": "node scripts/manage-railway-secrets.js sync",
+    "railway:secrets:verify": "node scripts/manage-railway-secrets.js verify"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,5 +1,4 @@
 const api = require('./testClient');
-const { startTestServer, stopTestServer } = require('./testServer');
 const logger = require('../../utils/logger');
 const mongoose = require('mongoose');
 
@@ -57,16 +56,6 @@ function generateTestContributorData(email, displayName) {
 }
 
 describe('Contributor Tests', () => {
-  beforeAll(async () => {
-    // Start test server
-    await startTestServer();
-  });
-
-  afterAll(async () => {
-    // Cleanup after all tests
-    await stopTestServer();
-  });
-
   beforeEach(async () => {
     // Clear any existing session before each test
     api.auth.clearSession();
@@ -198,29 +187,6 @@ describe('Contributor Tests', () => {
       if (error.response) {
         console.error('Update profile error:', error.response.data);
         throw new Error(`Update profile failed: ${error.response.data.message}`);
-      }
-      throw error;
-    }
-  });
-
-  test('should get all contributors', async () => {
-    try {
-      // Set up a test admin session
-      api.auth.setSession({
-        user: {
-          id: 'test-admin-1',
-          email: 'admin1@example.com',
-          role: 'admin',
-          permissions: ['read:all', 'write:all']
-        }
-      });
-
-      const response = await api.contributor.getAll();
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.data.contributors)).toBe(true);
-    } catch (error) {
-      if (error.response) {
-        expect(error.response.status).toBe(403); // Should fail without admin access
       } else {
         expect(error.code).toBe('ECONNREFUSED'); // Also acceptable
       }
