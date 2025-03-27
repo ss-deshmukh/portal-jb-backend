@@ -99,12 +99,19 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: "unsafe-none" } // Allow cross-origin window opening
 }));
 
-app.use(cors({
-  origin: process.env.NODE_ENV === 'development' 
-    ? true // Allow all origins in development
-    : process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
-  credentials: true
-})); // Enable CORS
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? '*' // Allow all origins in production
+    : ['http://localhost:3000', 'http://localhost:3001'], // Specific origins in development
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '10kb' })); // Body parser with size limit
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
