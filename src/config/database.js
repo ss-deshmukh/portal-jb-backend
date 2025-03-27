@@ -2,22 +2,13 @@ const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
 const getMongoUri = () => {
-  const env = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV || 'development';
+  const env = process.env.NODE_ENV || 'development';
   
   // Log available environment variables for debugging
   logger.info('Available environment variables:', Object.keys(process.env).join(', '));
   logger.info('Current environment:', env);
   
-  // Try different possible environment variable names
-  const possibleUriVars = ['MONGODB_URI', 'MONGODBURI', 'MONGO_URI', 'MONGOURI'];
-  const mongoUri = possibleUriVars.find(varName => process.env[varName]);
-  
-  if (mongoUri) {
-    logger.info(`Using ${mongoUri} environment variable`);
-    return process.env[mongoUri];
-  }
-  
-  // Fallback to environment-specific URIs
+  // Use environment-specific URIs
   switch (env) {
     case 'production':
       if (!process.env.MONGO_URI_PROD) {
@@ -41,7 +32,7 @@ const getMongoUri = () => {
 const connectDB = async () => {
   try {
     const mongoUri = getMongoUri();
-    const env = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV || 'development';
+    const env = process.env.NODE_ENV || 'development';
     
     logger.info(`Connecting to MongoDB (${env} environment)...`);
     logger.info('MongoDB URI:', mongoUri.replace(/\/\/[^:]+:[^@]+@/, '//****:****@')); // Log URI without credentials
