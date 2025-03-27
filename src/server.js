@@ -14,28 +14,52 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 
 // Load environment variables
-if (process.env.NODE_ENV === 'production') {
-  // In production, we don't need to load .env file as Railway provides environment variables
-  console.log('Running in production mode');
-  console.log('Checking specific environment variables:');
-  console.log('MONGO_URI_PROD exists:', !!process.env.MONGO_URI_PROD);
-  console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-  console.log('AUTH_SECRET exists:', !!process.env.AUTH_SECRET);
-  console.log('All environment variables:', process.env);
+if (process.env.RAILWAY_ENVIRONMENT === 'production') {
+  // In Railway production environment
+  process.env.NODE_ENV = 'production';
+  console.log('Running in Railway production environment');
+  console.log('Railway Environment Details:');
+  console.log('Service Name:', process.env.RAILWAY_SERVICE_NAME);
+  console.log('Project Name:', process.env.RAILWAY_PROJECT_NAME);
+  console.log('Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
+  console.log('Private Domain:', process.env.RAILWAY_PRIVATE_DOMAIN);
+  
+  // Check if required variables are missing
+  const requiredVars = ['MONGO_URI_PROD', 'JWT_SECRET', 'AUTH_SECRET', 'PORT'];
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.log('\nMissing required variables:', missingVars.join(', '));
+    console.log('Attempting to load from .env file...');
+    dotenv.config();
+    
+    // Check again after loading .env
+    const stillMissing = requiredVars.filter(varName => !process.env[varName]);
+    if (stillMissing.length > 0) {
+      console.error('Required variables still missing after loading .env:', stillMissing.join(', '));
+      console.error('Please ensure these variables are set in Railway environment variables');
+      process.exit(1);
+    }
+  }
+  
+  console.log('\nRequired environment variables are set:');
+  requiredVars.forEach(varName => {
+    console.log(`${varName}: ${varName.includes('SECRET') ? '****' : process.env[varName]}`);
+  });
 } else {
   dotenv.config();
 }
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGO_URI_PROD', 'PORT', 'NODE_ENV', 'JWT_SECRET', 'AUTH_SECRET'];
+const requiredEnvVars = ['MONGO_URI_PROD', 'PORT', 'JWT_SECRET', 'AUTH_SECRET'];
 
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
   console.error('Missing required environment variables:', missingEnvVars.join(', '));
-  console.error('Current environment:', process.env.NODE_ENV);
+  console.error('Current environment:', process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV);
   console.error('Available environment variables:', Object.keys(process.env).join(', '));
-  console.error('Environment variable values:');
+  console.error('\nEnvironment variable values:');
   requiredEnvVars.forEach(varName => {
     console.error(`${varName}: ${process.env[varName] || 'undefined'}`);
   });
