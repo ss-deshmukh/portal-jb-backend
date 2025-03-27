@@ -19,14 +19,19 @@ console.log('Current Environment:', process.env.NODE_ENV || 'development');
 console.log('Railway Environment:', process.env.RAILWAY_ENVIRONMENT || 'not set');
 console.log('Running in Railway:', !!process.env.RAILWAY_ENVIRONMENT);
 
-if (process.env.RAILWAY_ENVIRONMENT === 'production') {
-  // In Railway production environment
+// Check if we're in a Railway environment
+const isRailway = !!process.env.RAILWAY_ENVIRONMENT;
+
+if (isRailway) {
+  // In Railway environment
   process.env.NODE_ENV = 'production';
-  console.log('\n=== Railway Production Environment ===');
+  console.log('\n=== Railway Environment Details ===');
   console.log('Service Name:', process.env.RAILWAY_SERVICE_NAME);
   console.log('Project Name:', process.env.RAILWAY_PROJECT_NAME);
   console.log('Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
   console.log('Private Domain:', process.env.RAILWAY_PRIVATE_DOMAIN);
+  console.log('Public Domain:', process.env.RAILWAY_PUBLIC_DOMAIN);
+  console.log('Static URL:', process.env.RAILWAY_STATIC_URL);
   
   // Debug environment variables in production
   console.log('\n=== Environment Variables Status ===');
@@ -47,6 +52,21 @@ if (process.env.RAILWAY_ENVIRONMENT === 'production') {
     if (!key.includes('SECRET') && !key.includes('URI')) {
       console.log(`${key}: ${process.env[key]}`);
     }
+  });
+
+  // Check for Railway-specific environment variables
+  const railwayVars = [
+    'RAILWAY_SERVICE_NAME',
+    'RAILWAY_PROJECT_NAME',
+    'RAILWAY_ENVIRONMENT_NAME',
+    'RAILWAY_PRIVATE_DOMAIN',
+    'RAILWAY_PUBLIC_DOMAIN',
+    'RAILWAY_STATIC_URL'
+  ];
+
+  console.log('\n=== Railway-Specific Variables ===');
+  railwayVars.forEach(varName => {
+    console.log(`${varName}: ${process.env[varName] || 'not set'}`);
   });
 } else {
   // Load .env file only in development
@@ -94,6 +114,14 @@ if (missingEnvVars.length > 0) {
     missingEnvVars.forEach(varName => {
       console.error(`- ${varName}`);
     });
+    console.error('\nTo set these variables in Railway:');
+    console.error('1. Go to your Railway project dashboard');
+    console.error('2. Click on your service (portal-jb-backend)');
+    console.error('3. Go to the "Variables" tab');
+    console.error('4. Add the following variables:');
+    console.error('   MONGO_URI_PROD=your_mongodb_uri');
+    console.error('   JWT_SECRET=your_jwt_secret');
+    console.error('   AUTH_SECRET=your_auth_secret');
     throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
   } else {
     console.warn('\n=== Using Default Values for Development ===');
