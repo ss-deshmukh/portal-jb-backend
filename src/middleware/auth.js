@@ -1,8 +1,8 @@
 /**
  * Authentication Middleware
  * 
- * Verifies Auth.js (NextAuth.js) session cookies using the shared AUTH_SECRET.
- * Extracts user information from the session and adds it to the request object.
+ * Verifies Auth.js (NextAuth.js) session cookies and Bearer tokens using the shared AUTH_SECRET.
+ * Extracts user information from the session/token and adds it to the request object.
  */
 
 const jwt = require('jsonwebtoken');
@@ -16,14 +16,21 @@ if (!AUTH_SECRET) {
 
 const auth = async (req, res, next) => {
   try {
-    // Get the session cookie
-    const sessionCookie = req.cookies['next-auth.session-token'];
-    if (!sessionCookie) {
-      return res.status(401).json({ message: 'No session cookie found' });
-    }
+    let session;
 
-    // Decrypt the session cookie
-    const session = jwt.verify(sessionCookie, AUTH_SECRET);
+    // First try to get Bearer token from Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      session = jwt.verify(token, AUTH_SECRET);
+    } else {
+      // If no Bearer token, try to get session cookie
+      const sessionCookie = req.cookies['next-auth.session-token'];
+      if (!sessionCookie) {
+        return res.status(401).json({ message: 'No authentication token found' });
+      }
+      session = jwt.verify(sessionCookie, AUTH_SECRET);
+    }
     
     // Verify session is valid and not expired
     if (!session || !session.user) {

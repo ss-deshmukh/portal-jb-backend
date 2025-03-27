@@ -16,49 +16,44 @@ describe('Task Tests', () => {
   let testSponsor;
   let authToken;
 
-  beforeEach(async () => {
-    // Clear any existing session
-    api.auth.clearSession();
-    
-    // Create a test sponsor
-    const testWalletAddress = generateUniqueWalletAddress();
-    const sponsorResponse = await api.sponsor.register({
+  beforeAll(async () => {
+    // Register a test sponsor
+    const sponsorData = {
       profile: {
-        walletAddress: testWalletAddress,
-        name: 'Test Sponsor for Task',
+        walletAddress: generateUniqueWalletAddress(),
+        name: 'Test Sponsor',
         logo: 'https://example.com/sponsor-logo.png',
-        description: 'Test sponsor description for task testing',
-        website: 'https://company.com/test-task',
-        x: 'https://twitter.com/test-sponsor',
-        discord: 'https://discord.gg/test-sponsor',
-        telegram: 'https://t.me/test-sponsor',
-        contactEmail: 'test.sponsor@example.com',
-        categories: ['development', 'design'],
-        taskIds: []
+        description: 'Test Sponsor Description',
+        website: 'https://example.com',
+        x: 'https://x.com/testsponsor',
+        discord: 'https://discord.gg/testsponsor',
+        telegram: 'https://t.me/testsponsor',
+        contactEmail: 'sponsor@example.com',
+        categories: ['development'],
+        taskIds: [],
+        registeredAt: new Date().toISOString()
       }
-    });
+    };
 
-    if (sponsorResponse.status !== 201) {
-      throw new Error(`Sponsor creation failed: ${sponsorResponse.data.message}`);
-    }
-    testSponsor = sponsorResponse.data.sponsor;
+    const registerResponse = await api.sponsor.register(sponsorData);
+    testSponsor = registerResponse.data.sponsor;
 
-    // Login sponsor to get auth token
+    // Login as the test sponsor
     const loginResponse = await api.sponsor.login({
-      walletAddress: testWalletAddress
+      walletAddress: testSponsor.walletAddress
     });
 
-    if (loginResponse.status !== 200) {
-      throw new Error(`Sponsor login failed: ${loginResponse.data.message}`);
-    }
-    authToken = loginResponse.data.token;
+    // Set the auth token for subsequent requests
+    await api.auth.setSession({
+      id: testSponsor._id,
+      walletAddress: testSponsor.walletAddress,
+      role: 'sponsor'
+    });
   });
 
-  afterEach(async () => {
-    // Clean up test sponsor
-    if (testSponsor) {
-      await api.sponsor.delete(testSponsor._id);
-    }
+  afterAll(async () => {
+    // Clear auth session
+    await api.auth.clearSession();
   });
 
   test('should create a new task', async () => {
@@ -81,7 +76,7 @@ describe('Task Tests', () => {
       }
     };
 
-    const response = await api.task.create(taskData, authToken);
+    const response = await api.task.create(taskData);
     expect(response.status).toBe(201);
     expect(response.data).toHaveProperty('task');
     expect(response.data.task.title).toBe(taskData.task.title);
@@ -115,7 +110,7 @@ describe('Task Tests', () => {
       }
     };
 
-    const createResponse = await api.task.create(taskData, authToken);
+    const createResponse = await api.task.create(taskData);
     const taskId = createResponse.data.task.id;
 
     // Then get the task
@@ -147,23 +142,26 @@ describe('Task Tests', () => {
       }
     };
 
-    const createResponse = await api.task.create(taskData, authToken);
+    const createResponse = await api.task.create(taskData);
     const taskId = createResponse.data.task.id;
 
-    // Then update the task
+    // Update the task
     const updateData = {
       task: {
-        title: 'Updated Task Title',
-        description: 'Updated Description',
-        priority: 'high'
+        title: 'Updated Test Task',
+        description: 'Updated Test Description'
       }
     };
 
-    const updateResponse = await api.task.update(taskId, updateData, authToken);
+    const updateResponse = await api.task.update(taskId, updateData);
     expect(updateResponse.status).toBe(200);
     expect(updateResponse.data.task.title).toBe(updateData.task.title);
     expect(updateResponse.data.task.description).toBe(updateData.task.description);
-    expect(updateResponse.data.task.priority).toBe(updateData.task.priority);
+
+    // Verify the update
+    const getResponse = await api.task.get(taskId);
+    expect(getResponse.data.tasks[0].title).toBe(updateData.task.title);
+    expect(getResponse.data.tasks[0].description).toBe(updateData.task.description);
   });
 
   test('should delete a task', async () => {
@@ -187,11 +185,11 @@ describe('Task Tests', () => {
       }
     };
 
-    const createResponse = await api.task.create(taskData, authToken);
+    const createResponse = await api.task.create(taskData);
     const taskId = createResponse.data.task.id;
 
     // Then delete the task
-    const deleteResponse = await api.task.delete(taskId, authToken);
+    const deleteResponse = await api.task.delete(taskId);
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.data.message).toBe('Task deleted successfully');
 

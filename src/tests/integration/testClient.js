@@ -306,9 +306,15 @@ const api = {
 
   // Task endpoints
   task: {
-    create: async (data, token) => {
+    create: async (data) => {
       logger.info('POST /api/task/create');
       try {
+        // Get the current session token
+        const token = testClient.defaults.headers.Cookie?.split('=')[1];
+        if (!token) {
+          throw new Error('No authentication token available');
+        }
+
         const response = await testClient.post('/task/create', data, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -321,9 +327,17 @@ const api = {
     list: async () => {
       logger.info('GET /api/task/fetch');
       try {
+        // Get the current session token
+        const token = testClient.defaults.headers.Cookie?.split('=')[1];
+        if (!token) {
+          throw new Error('No authentication token available');
+        }
+
         // First get all tasks by fetching with an empty array
         const response = await testClient.post('/task/fetch', {
           ids: ['*'] // Use '*' to fetch all tasks
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         return response;
       } catch (error) {
@@ -334,8 +348,16 @@ const api = {
     get: async (id) => {
       logger.info(`GET /api/task/fetch`);
       try {
+        // Get the current session token
+        const token = testClient.defaults.headers.Cookie?.split('=')[1];
+        if (!token) {
+          throw new Error('No authentication token available');
+        }
+
         const response = await testClient.post('/task/fetch', {
           ids: [id]
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         return response;
       } catch (error) {
@@ -343,9 +365,15 @@ const api = {
         throw error;
       }
     },
-    update: async (id, data, token) => {
+    update: async (id, data) => {
       logger.info(`PUT /api/task/update`);
       try {
+        // Get the current session token
+        const token = testClient.defaults.headers.Cookie?.split('=')[1];
+        if (!token) {
+          throw new Error('No authentication token available');
+        }
+
         const response = await testClient.put('/task/update', {
           task: {
             id,
@@ -360,9 +388,15 @@ const api = {
         throw error;
       }
     },
-    delete: async (id, token) => {
+    delete: async (id) => {
       logger.info(`DELETE /api/task`);
       try {
+        // Get the current session token
+        const token = testClient.defaults.headers.Cookie?.split('=')[1];
+        if (!token) {
+          throw new Error('No authentication token available');
+        }
+
         const response = await testClient.delete('/task', {
           headers: { Authorization: `Bearer ${token}` },
           data: { id }
