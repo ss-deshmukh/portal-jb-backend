@@ -8,11 +8,18 @@ const getMongoUri = () => {
   logger.info('Available environment variables:', Object.keys(process.env).join(', '));
   logger.info('Current environment:', env);
   
+  // Use MONGODB_URI if available, otherwise fall back to environment-specific URIs
+  if (process.env.MONGODB_URI) {
+    logger.info('Using MONGODB_URI environment variable');
+    return process.env.MONGODB_URI;
+  }
+  
+  // Fallback to environment-specific URIs
   switch (env) {
     case 'production':
       if (!process.env.MONGO_URI_PROD) {
-        logger.error('MONGO_URI_PROD is not defined in environment variables');
-        throw new Error('MONGO_URI_PROD is not defined in environment variables');
+        logger.error('Neither MONGODB_URI nor MONGO_URI_PROD is defined');
+        throw new Error('Database connection string is not defined');
       }
       logger.info('Using production MongoDB URI');
       return process.env.MONGO_URI_PROD;
@@ -20,8 +27,8 @@ const getMongoUri = () => {
     case 'development':
     default:
       if (!process.env.MONGO_URI_DEV) {
-        logger.error('MONGO_URI_DEV is not defined in environment variables');
-        throw new Error('MONGO_URI_DEV is not defined in environment variables');
+        logger.error('Neither MONGODB_URI nor MONGO_URI_DEV is defined');
+        throw new Error('Database connection string is not defined');
       }
       logger.info('Using development MongoDB URI');
       return process.env.MONGO_URI_DEV;

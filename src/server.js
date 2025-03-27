@@ -22,7 +22,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGO_URI_DEV', 'MONGO_URI_PROD', 'PORT', 'NODE_ENV'];
+const requiredEnvVars = ['MONGODB_URI', 'PORT', 'NODE_ENV'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
