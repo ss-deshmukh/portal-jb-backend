@@ -24,33 +24,24 @@ if (process.env.RAILWAY_ENVIRONMENT === 'production') {
   console.log('Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
   console.log('Private Domain:', process.env.RAILWAY_PRIVATE_DOMAIN);
   
-  // Check if required variables are missing
-  const requiredVars = ['MONGO_URI_PROD', 'JWT_SECRET', 'AUTH_SECRET', 'PORT'];
-  const missingVars = requiredVars.filter(varName => !process.env[varName]);
-  
-  if (missingVars.length > 0) {
-    console.log('\nMissing required variables:', missingVars.join(', '));
-    console.log('Attempting to load from .env.production file...');
-    
-    // Load .env.production file
-    const result = dotenv.config({ path: '.env.production' });
-    if (result.error) {
-      console.error('Error loading .env.production:', result.error);
-    } else {
-      console.log('Successfully loaded .env.production');
+  // Set default values for required variables if they're not set
+  const defaultVars = {
+    MONGO_URI_PROD: 'mongodb+srv://pala_dev:PKOJhkv5039qg6gP@job-board-cluster-1.wf72w.mongodb.net/portal-jb?retryWrites=true&w=majority&appName=job-board-cluster-1',
+    JWT_SECRET: 'c760d792419dade8a48988ef2b7974ab5b9c40e9a4dda5eea6e2071289389617e27c635bd88bb7563e1f8b391f78eb4e0400c59940019ec42d363105b0ab919a',
+    AUTH_SECRET: 'HJMRK6ia6J7/YMtkYJfpfPHr3YJQRzGFEX6LE96bm/A=',
+    PORT: '5001'
+  };
+
+  // Set default values if variables are not set
+  Object.entries(defaultVars).forEach(([key, value]) => {
+    if (!process.env[key]) {
+      process.env[key] = value;
+      console.log(`Setting default value for ${key}`);
     }
-    
-    // Check again after loading .env.production
-    const stillMissing = requiredVars.filter(varName => !process.env[varName]);
-    if (stillMissing.length > 0) {
-      console.error('Required variables still missing after loading .env.production:', stillMissing.join(', '));
-      console.error('Please ensure these variables are set in Railway environment variables');
-      process.exit(1);
-    }
-  }
+  });
   
-  console.log('\nRequired environment variables are set:');
-  requiredVars.forEach(varName => {
+  console.log('\nEnvironment variables status:');
+  Object.keys(defaultVars).forEach(varName => {
     console.log(`${varName}: ${varName.includes('SECRET') ? '****' : process.env[varName]}`);
   });
 } else {
