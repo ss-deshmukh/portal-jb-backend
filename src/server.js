@@ -18,21 +18,19 @@ if (process.env.NODE_ENV === 'production') {
   // In production, we don't need to load .env file as Railway provides environment variables
   console.log('Running in production mode, using Railway environment variables');
   console.log('All environment variables:', process.env);
-  console.log('MONGODB_URI value:', process.env.MONGODB_URI);
 } else {
   dotenv.config();
 }
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGODB_URI', 'PORT', 'NODE_ENV'];
+const requiredEnvVars = ['MONGO_URI_PROD', 'PORT', 'NODE_ENV'];
+
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
   console.error('Missing required environment variables:', missingEnvVars.join(', '));
   console.error('Current environment:', process.env.NODE_ENV);
   console.error('Available environment variables:', Object.keys(process.env).join(', '));
-  console.error('MONGODB_URI exists:', !!process.env.MONGODB_URI);
-  console.error('MONGODB_URI value:', process.env.MONGODB_URI);
   process.exit(1);
 }
 

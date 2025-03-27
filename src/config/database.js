@@ -21,8 +21,8 @@ const getMongoUri = () => {
   switch (env) {
     case 'production':
       if (!process.env.MONGO_URI_PROD) {
-        logger.error('No MongoDB connection string found in environment variables');
-        throw new Error('Database connection string is not defined');
+        logger.error('Production MongoDB URI is not defined. Please set MONGO_URI_PROD environment variable.');
+        throw new Error('Production MongoDB URI is not defined');
       }
       logger.info('Using production MongoDB URI');
       return process.env.MONGO_URI_PROD;
@@ -30,8 +30,8 @@ const getMongoUri = () => {
     case 'development':
     default:
       if (!process.env.MONGO_URI_DEV) {
-        logger.error('No MongoDB connection string found in environment variables');
-        throw new Error('Database connection string is not defined');
+        logger.error('Development MongoDB URI is not defined. Please set MONGO_URI_DEV environment variable.');
+        throw new Error('Development MongoDB URI is not defined');
       }
       logger.info('Using development MongoDB URI');
       return process.env.MONGO_URI_DEV;
