@@ -1,5 +1,8 @@
 const axios = require('axios');
-const logger = require('./logger');
+const logger = require('../../utils/logger');
+
+// Get test token from environment variable
+const TEST_TOKEN = process.env.TEST_TOKEN || 'test_token_for_integration_tests_only';
 
 // Base URL for the API
 const BASE_URL = 'http://localhost:5001/api';
@@ -9,14 +12,16 @@ const testData = {
   contributor: {
     register: {
       basicInfo: {
-        email: 'test@example.com',
+        email: `test.${Date.now()}@example.com`,
         displayName: 'Test Contributor',
         bio: 'Test bio',
-        walletAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CERvfJmcNSUKcBdUjcMVT', // Valid Polkadot address
-        website: 'https://github.com/test',
-        x: 'https://twitter.com/test',
-        telegram: 'https://t.me/test',
-        joinDate: new Date().toISOString() // Add join date
+        profileImage: '',
+        joinDate: new Date(),
+        walletAddress: '5' + 'A'.repeat(47),
+        website: '',
+        x: '',
+        discord: '',
+        telegram: ''
       },
       skills: {
         primarySkills: [
@@ -97,31 +102,24 @@ const testData = {
 
 // Helper function to make authenticated requests
 const makeAuthenticatedRequest = async (method, endpoint, data = null, token = null) => {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   try {
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Log the request data
-    logger.info(`Making ${method} request to ${endpoint} with data:`, JSON.stringify(data, null, 2));
-
     const response = await axios({
       method,
-      url: `${BASE_URL}${endpoint}`,
+      url: endpoint,
       data,
       headers
     });
-
-    return response.data;
+    return response;
   } catch (error) {
-    if (error.response) {
-      logger.error('Request failed with response:', JSON.stringify(error.response.data, null, 2));
-      throw new Error(`Request failed with status code ${error.response.status}: ${JSON.stringify(error.response.data)}`);
-    }
+    logger.error('Test request failed:', error.message);
     throw error;
   }
 };
@@ -146,15 +144,15 @@ const apiTests = {
       const response = await makeAuthenticatedRequest('PUT', '/contributor', {
         ...testData.contributor.register,
         bio: 'Updated bio'
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - PUT /contributor: Success');
       return response;
     },
     async delete() {
       logger.info('DELETE /api/contributor');
       const response = await makeAuthenticatedRequest('DELETE', '/contributor', {
-        wallet: testData.contributor.register.walletAddress
-      }, 'test_token');
+        email: testData.contributor.register.basicInfo.email
+      }, TEST_TOKEN);
       logger.info('API Test - DELETE /contributor: Success');
       return response;
     }
@@ -177,7 +175,7 @@ const apiTests = {
       const response = await makeAuthenticatedRequest('PUT', '/sponsor', {
         ...testData.sponsor.register,
         description: 'Updated description'
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - PUT /sponsor: Success');
       return response;
     },
@@ -185,7 +183,7 @@ const apiTests = {
       logger.info('DELETE /api/sponsor');
       const response = await makeAuthenticatedRequest('DELETE', '/sponsor', {
         wallet: testData.sponsor.register.profile.walletAddress
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - DELETE /sponsor: Success');
       return response;
     }
@@ -193,7 +191,7 @@ const apiTests = {
   task: {
     async create() {
       logger.info('POST /api/task/create');
-      const response = await makeAuthenticatedRequest('POST', '/task/create', testData.task.create, 'test_token');
+      const response = await makeAuthenticatedRequest('POST', '/task/create', testData.task.create, TEST_TOKEN);
       logger.info('API Test - POST /task/create: Success');
       return response;
     },
@@ -201,7 +199,7 @@ const apiTests = {
       logger.info('POST /api/task/fetch');
       const response = await makeAuthenticatedRequest('POST', '/task/fetch', {
         taskIds: ['test_task_id']
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - POST /task/fetch: Success');
       return response;
     },
@@ -209,7 +207,7 @@ const apiTests = {
       logger.info('DELETE /api/task');
       const response = await makeAuthenticatedRequest('DELETE', '/task', {
         id: 'test_task_id'
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - DELETE /task: Success');
       return response;
     }
@@ -219,7 +217,7 @@ const apiTests = {
       logger.info('POST /api/skill/create');
       const response = await makeAuthenticatedRequest('POST', '/skill/create', {
         name: testData.skill.create
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - POST /skill/create: Success');
       return response;
     },
@@ -228,7 +226,7 @@ const apiTests = {
       const response = await makeAuthenticatedRequest('PUT', '/skill', {
         id: testData.skill.update.id,
         updated: testData.skill.update.updated
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - PUT /skill: Success');
       return response;
     },
@@ -236,7 +234,7 @@ const apiTests = {
       logger.info('DELETE /api/skill');
       const response = await makeAuthenticatedRequest('DELETE', '/skill', {
         id: testData.skill.update.id
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - DELETE /skill: Success');
       return response;
     }
@@ -244,7 +242,7 @@ const apiTests = {
   submission: {
     async create() {
       logger.info('POST /api/submission');
-      const response = await makeAuthenticatedRequest('POST', '/submission', testData.submission.create, 'test_token');
+      const response = await makeAuthenticatedRequest('POST', '/submission', testData.submission.create, TEST_TOKEN);
       logger.info('API Test - POST /submission: Success');
       return response;
     },
@@ -252,7 +250,7 @@ const apiTests = {
       logger.info('DELETE /api/submission');
       const response = await makeAuthenticatedRequest('DELETE', '/submission', {
         submissionId: 'test_submission_id'
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - DELETE /submission: Success');
       return response;
     },
@@ -260,7 +258,7 @@ const apiTests = {
       logger.info('GET /api/submission');
       const response = await makeAuthenticatedRequest('GET', '/submission', {
         ids: ['test_submission_id'] // Will be replaced with actual submission ID
-      }, 'test_token');
+      }, TEST_TOKEN);
       logger.info('API Test - GET /submission: Success');
       return response;
     }
@@ -298,7 +296,7 @@ const runAllTests = async () => {
     const taskId = taskCreate.id;
     const taskFetch = await makeAuthenticatedRequest('POST', '/task/fetch', {
       ids: [taskId]
-    }, 'test_token');
+    }, TEST_TOKEN);
     
     // Test Skill endpoints
     logger.info('Testing Skill endpoints...');
@@ -314,12 +312,12 @@ const runAllTests = async () => {
       updated: {
         name: 'Updated Skill'
       }
-    }, 'test_token');
+    }, TEST_TOKEN);
     
     // Delete skill with the stored ID
     await makeAuthenticatedRequest('DELETE', '/skill', {
       id: skillId
-    }, 'test_token');
+    }, TEST_TOKEN);
     
     // Test Submission endpoints
     logger.info('Testing Submission endpoints...');
@@ -338,12 +336,12 @@ const runAllTests = async () => {
     const submissionId = submissionCreate.submission.id;
     const submissionFetch = await makeAuthenticatedRequest('GET', '/submission', {
       ids: [submissionId]
-    }, 'test_token');
+    }, TEST_TOKEN);
     
     // Delete task after submission is created
     await makeAuthenticatedRequest('DELETE', '/task', {
       id: taskId
-    }, 'test_token');
+    }, TEST_TOKEN);
     
     logger.info('All API tests completed successfully!');
   } catch (error) {
