@@ -19,13 +19,10 @@ console.log('Current Environment:', process.env.NODE_ENV || 'development');
 console.log('Railway Environment:', process.env.RAILWAY_ENVIRONMENT || 'not set');
 console.log('Running in Railway:', !!process.env.RAILWAY_ENVIRONMENT);
 
-// Check if we're in a Railway environment
-const isRailway = !!process.env.RAILWAY_ENVIRONMENT;
-
-if (isRailway) {
-  // In Railway environment
+// Force production mode in Railway
+if (process.env.RAILWAY_ENVIRONMENT) {
   process.env.NODE_ENV = 'production';
-  console.log('\n=== Railway Environment Details ===');
+  console.log('\n=== Railway Production Environment ===');
   console.log('Service Name:', process.env.RAILWAY_SERVICE_NAME);
   console.log('Project Name:', process.env.RAILWAY_PROJECT_NAME);
   console.log('Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
@@ -53,21 +50,6 @@ if (isRailway) {
       console.log(`${key}: ${process.env[key]}`);
     }
   });
-
-  // Check for Railway-specific environment variables
-  const railwayVars = [
-    'RAILWAY_SERVICE_NAME',
-    'RAILWAY_PROJECT_NAME',
-    'RAILWAY_ENVIRONMENT_NAME',
-    'RAILWAY_PRIVATE_DOMAIN',
-    'RAILWAY_PUBLIC_DOMAIN',
-    'RAILWAY_STATIC_URL'
-  ];
-
-  console.log('\n=== Railway-Specific Variables ===');
-  railwayVars.forEach(varName => {
-    console.log(`${varName}: ${process.env[varName] || 'not set'}`);
-  });
 } else {
   // Load .env file only in development
   console.log('\n=== Loading Development Environment ===');
@@ -94,7 +76,7 @@ const envVars = {
 
 // Validate required environment variables
 const requiredEnvVars = ['MONGO_URI_PROD', 'PORT', 'JWT_SECRET', 'AUTH_SECRET'];
-const missingEnvVars = requiredEnvVars.filter(key => !envVars[key]);
+const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 
 if (missingEnvVars.length > 0) {
   console.error('\n=== Missing Required Environment Variables ===');
@@ -126,20 +108,20 @@ if (missingEnvVars.length > 0) {
   } else {
     console.warn('\n=== Using Default Values for Development ===');
     // Set default values for development
-    envVars.MONGO_URI_PROD = envVars.MONGO_URI_PROD || envVars.MONGO_URI_DEV;
-    envVars.JWT_SECRET = envVars.JWT_SECRET || 'development_jwt_secret';
-    envVars.AUTH_SECRET = envVars.AUTH_SECRET || 'development_auth_secret';
+    process.env.MONGO_URI_PROD = process.env.MONGO_URI_PROD || process.env.MONGO_URI_DEV;
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'development_jwt_secret';
+    process.env.AUTH_SECRET = process.env.AUTH_SECRET || 'development_auth_secret';
   }
 }
 
 // Log environment variables (safely)
 console.log('\n=== Application Configuration ===');
-console.log('Environment:', envVars.NODE_ENV);
-console.log('Port:', envVars.PORT);
-console.log('Log Level:', envVars.LOG_LEVEL);
-console.log('Rate Limiting:', envVars.ENABLE_RATE_LIMITING);
-console.log('Request Logging:', envVars.ENABLE_REQUEST_LOGGING);
-console.log('Swagger:', envVars.ENABLE_SWAGGER);
+console.log('Environment:', process.env.NODE_ENV);
+console.log('Port:', process.env.PORT);
+console.log('Log Level:', process.env.LOG_LEVEL || 'info');
+console.log('Rate Limiting:', process.env.ENABLE_RATE_LIMITING === 'true');
+console.log('Request Logging:', process.env.ENABLE_REQUEST_LOGGING === 'true');
+console.log('Swagger:', process.env.ENABLE_SWAGGER === 'true');
 
 // Import custom modules
 const { connectDB } = require('./config/database');
