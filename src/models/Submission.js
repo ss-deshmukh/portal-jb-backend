@@ -118,7 +118,6 @@ submissionSchema.pre('save', function(next) {
 });
 
 // Create indexes
-submissionSchema.index({ id: 1 });
 submissionSchema.index({ taskId: 1 });
 submissionSchema.index({ walletAddress: 1 });
 

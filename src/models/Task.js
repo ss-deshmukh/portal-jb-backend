@@ -168,7 +168,6 @@ taskSchema.pre('findOne', function() {
 });
 
 // Indexes
-taskSchema.index({ id: 1 });
 taskSchema.index({ sponsorId: 1 });
 taskSchema.index({ status: 1 });
 taskSchema.index({ skills: 1 });

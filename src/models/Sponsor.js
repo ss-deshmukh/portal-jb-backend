@@ -19,7 +19,6 @@ const sponsorSchema = new mongoose.Schema({
 });
 
 // Indexes
-sponsorSchema.index({ walletAddress: 1 });
 sponsorSchema.index({ name: 1 });
 sponsorSchema.index({ categories: 1 });
 sponsorSchema.index({ verified: 1 });
