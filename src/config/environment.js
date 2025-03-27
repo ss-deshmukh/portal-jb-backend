@@ -1,21 +1,22 @@
 const dotenv = require('dotenv');
+const railwayConfig = require('./railway');
 
 // Load environment variables
 console.log('\n=== Environment Initialization ===');
 console.log('Current Environment:', process.env.NODE_ENV || 'development');
 console.log('Railway Environment:', process.env.RAILWAY_ENVIRONMENT || 'not set');
-console.log('Running in Railway:', !!process.env.RAILWAY_ENVIRONMENT);
+console.log('Running in Railway:', railwayConfig.isRailway);
 
 // Force production mode in Railway
-if (process.env.RAILWAY_ENVIRONMENT) {
+if (railwayConfig.isRailway) {
   process.env.NODE_ENV = 'production';
   console.log('\n=== Railway Production Environment ===');
-  console.log('Service Name:', process.env.RAILWAY_SERVICE_NAME);
-  console.log('Project Name:', process.env.RAILWAY_PROJECT_NAME);
-  console.log('Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
-  console.log('Private Domain:', process.env.RAILWAY_PRIVATE_DOMAIN);
-  console.log('Public Domain:', process.env.RAILWAY_PUBLIC_DOMAIN);
-  console.log('Static URL:', process.env.RAILWAY_STATIC_URL);
+  console.log('Service Name:', railwayConfig.serviceName);
+  console.log('Project Name:', railwayConfig.projectName);
+  console.log('Environment:', railwayConfig.environmentName);
+  console.log('Private Domain:', railwayConfig.privateDomain);
+  console.log('Public Domain:', railwayConfig.publicDomain);
+  console.log('Static URL:', railwayConfig.staticUrl);
   
   // Debug environment variables in production
   console.log('\n=== Environment Variables Status ===');
