@@ -23,27 +23,6 @@ if (process.env.RAILWAY_ENVIRONMENT === 'production') {
   console.log('Project Name:', process.env.RAILWAY_PROJECT_NAME);
   console.log('Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
   console.log('Private Domain:', process.env.RAILWAY_PRIVATE_DOMAIN);
-  
-  // Set default values for required variables if they're not set
-  const defaultVars = {
-    MONGO_URI_PROD: 'mongodb+srv://pala_dev:PKOJhkv5039qg6gP@job-board-cluster-1.wf72w.mongodb.net/portal-jb?retryWrites=true&w=majority&appName=job-board-cluster-1',
-    JWT_SECRET: 'c760d792419dade8a48988ef2b7974ab5b9c40e9a4dda5eea6e2071289389617e27c635bd88bb7563e1f8b391f78eb4e0400c59940019ec42d363105b0ab919a',
-    AUTH_SECRET: 'HJMRK6ia6J7/YMtkYJfpfPHr3YJQRzGFEX6LE96bm/A=',
-    PORT: '5001'
-  };
-
-  // Set default values if variables are not set
-  Object.entries(defaultVars).forEach(([key, value]) => {
-    if (!process.env[key]) {
-      process.env[key] = value;
-      console.log(`Setting default value for ${key}`);
-    }
-  });
-  
-  console.log('\nEnvironment variables status:');
-  Object.keys(defaultVars).forEach(varName => {
-    console.log(`${varName}: ${varName.includes('SECRET') ? '****' : process.env[varName]}`);
-  });
 } else {
   dotenv.config();
 }
@@ -72,6 +51,14 @@ const missingEnvVars = requiredEnvVars.filter(key => !envVars[key]);
 if (missingEnvVars.length > 0) {
   throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 }
+
+// Log environment variables (safely)
+console.log('Environment:', envVars.NODE_ENV);
+console.log('Port:', envVars.PORT);
+console.log('Log Level:', envVars.LOG_LEVEL);
+console.log('Rate Limiting:', envVars.ENABLE_RATE_LIMITING);
+console.log('Request Logging:', envVars.ENABLE_REQUEST_LOGGING);
+console.log('Swagger:', envVars.ENABLE_SWAGGER);
 
 // Import custom modules
 const { connectDB } = require('./config/database');
