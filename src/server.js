@@ -48,20 +48,29 @@ if (process.env.RAILWAY_ENVIRONMENT === 'production') {
   dotenv.config();
 }
 
+// Define environment variables with defaults
+const envVars = {
+  PORT: process.env.PORT || 5001,
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  MONGO_URI_DEV: process.env.MONGO_URI_DEV,
+  MONGO_URI_PROD: process.env.MONGO_URI_PROD,
+  JWT_SECRET: process.env.JWT_SECRET,
+  AUTH_SECRET: process.env.AUTH_SECRET,
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  ENABLE_RATE_LIMITING: process.env.ENABLE_RATE_LIMITING === 'true',
+  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
+  ENABLE_REQUEST_LOGGING: process.env.ENABLE_REQUEST_LOGGING === 'true',
+  ENABLE_SWAGGER: process.env.ENABLE_SWAGGER === 'true'
+};
+
 // Validate required environment variables
 const requiredEnvVars = ['MONGO_URI_PROD', 'PORT', 'JWT_SECRET', 'AUTH_SECRET'];
-
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+const missingEnvVars = requiredEnvVars.filter(key => !envVars[key]);
 
 if (missingEnvVars.length > 0) {
-  console.error('Missing required environment variables:', missingEnvVars.join(', '));
-  console.error('Current environment:', process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV);
-  console.error('Available environment variables:', Object.keys(process.env).join(', '));
-  console.error('\nEnvironment variable values:');
-  requiredEnvVars.forEach(varName => {
-    console.error(`${varName}: ${process.env[varName] || 'undefined'}`);
-  });
-  process.exit(1);
+  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
 }
 
 // Import custom modules
