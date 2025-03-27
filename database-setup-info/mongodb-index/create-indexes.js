@@ -17,15 +17,14 @@ db.submissions.createIndex({ "walletAddress": 1 }, { name: "submission_contribut
 db.submissions.createIndex({ "isAccepted": 1 }, { name: "submission_accepted" });
 db.submissions.createIndex({ "taskId": 1, "walletAddress": 1 }, { unique: true, name: "submission_task_contributor_unique" });
 
-// Create indexes for contributors collection
+// Create indexes for contributors
 db.contributors.createIndex({ "basicInfo.walletAddress": 1 }, { unique: true, name: "contributor_wallet_unique" });
-db.contributors.createIndex({ "basicInfo.email": 1 }, { unique: true, name: "contributor_email_unique" });
 db.contributors.createIndex({ "skills.primarySkills.name": 1 }, { name: "contributor_primary_skills" });
 db.contributors.createIndex({ "skills.secondarySkills.name": 1 }, { name: "contributor_secondary_skills" });
 db.contributors.createIndex({ "reputation.overallScore": 1 }, { name: "contributor_reputation" });
 db.contributors.createIndex({ "contributionStats.totalTasksCompleted": 1 }, { name: "contributor_tasks_completed" });
 
-// Create indexes for sponsors collection
+// Create indexes for sponsors
 db.sponsors.createIndex({ "walletAddress": 1 }, { unique: true, name: "sponsor_wallet_unique" });
 db.sponsors.createIndex({ "verified": 1 }, { name: "sponsor_verified" });
 db.sponsors.createIndex({ "categories": 1 }, { name: "sponsor_categories" });

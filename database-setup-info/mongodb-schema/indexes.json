@@ -73,11 +73,6 @@
       "name": "contributor_wallet_unique"
     },
     {
-      "key": { "basicInfo.email": 1 },
-      "unique": true,
-      "name": "contributor_email_unique"
-    },
-    {
       "key": { "skills.primarySkills.name": 1 },
       "name": "contributor_primary_skills"
     },
