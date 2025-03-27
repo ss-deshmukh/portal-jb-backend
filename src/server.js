@@ -23,7 +23,16 @@ if (process.env.RAILWAY_ENVIRONMENT === 'production') {
   console.log('Project Name:', process.env.RAILWAY_PROJECT_NAME);
   console.log('Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
   console.log('Private Domain:', process.env.RAILWAY_PRIVATE_DOMAIN);
+  
+  // Debug environment variables in production
+  console.log('\nEnvironment Variables Status:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('PORT:', process.env.PORT);
+  console.log('MONGO_URI_PROD exists:', !!process.env.MONGO_URI_PROD);
+  console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+  console.log('AUTH_SECRET exists:', !!process.env.AUTH_SECRET);
 } else {
+  // Load .env file only in development
   dotenv.config();
 }
 
@@ -56,7 +65,17 @@ if (missingEnvVars.length > 0) {
   requiredEnvVars.forEach(varName => {
     console.error(`${varName}: ${varName.includes('SECRET') ? '****' : process.env[varName]}`);
   });
-  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  
+  // In production, throw error. In development, use defaults
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  } else {
+    console.warn('Using default values for development environment');
+    // Set default values for development
+    envVars.MONGO_URI_PROD = envVars.MONGO_URI_PROD || envVars.MONGO_URI_DEV;
+    envVars.JWT_SECRET = envVars.JWT_SECRET || 'development_jwt_secret';
+    envVars.AUTH_SECRET = envVars.AUTH_SECRET || 'development_auth_secret';
+  }
 }
 
 // Log environment variables (safely)
