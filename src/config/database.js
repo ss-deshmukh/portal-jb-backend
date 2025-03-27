@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
 const getMongoUri = () => {
-  const env = process.env.NODE_ENV || 'development';
+  const env = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV || 'development';
   
   // Log available environment variables for debugging
   logger.info('Available environment variables:', Object.keys(process.env).join(', '));
@@ -41,7 +41,7 @@ const getMongoUri = () => {
 const connectDB = async () => {
   try {
     const mongoUri = getMongoUri();
-    const env = process.env.NODE_ENV || 'development';
+    const env = process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV || 'development';
     
     logger.info(`Connecting to MongoDB (${env} environment)...`);
     logger.info('MongoDB URI:', mongoUri.replace(/\/\/[^:]+:[^@]+@/, '//****:****@')); // Log URI without credentials

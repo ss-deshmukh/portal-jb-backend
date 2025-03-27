@@ -14,16 +14,16 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 
 // Load environment variables
-if (process.env.NODE_ENV === 'production') {
-  // In production, we don't need to load .env file as Railway provides environment variables
-  console.log('Running in production mode, using Railway environment variables');
-  console.log('All environment variables:', process.env);
+if (process.env.RAILWAY_ENVIRONMENT === 'production') {
+  // In Railway production environment
+  process.env.NODE_ENV = 'production';
+  console.log('Running in Railway production environment');
 } else {
   dotenv.config();
 }
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGO_URI_PROD', 'PORT', 'NODE_ENV'];
+const requiredEnvVars = ['MONGO_URI_PROD', 'PORT'];
 
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
