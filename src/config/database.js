@@ -16,9 +16,9 @@ const getMongoUri = () => {
         throw new Error('Production MongoDB URI is not defined');
       }
       logger.info('Using production MongoDB URI');
-      // Ensure we're using the portal-jb database in production
+      // Remove any existing database name from the URI to prevent duplication
       const prodUri = process.env.MONGO_URI_PROD;
-      return prodUri.includes('?') ? prodUri.replace('?', '/portal-jb?') : prodUri + '/portal-jb';
+      return prodUri.replace(/\/[^\/\?]+(?=\?|$)/, '');
     case 'test':
     case 'development':
     default:
@@ -39,7 +39,9 @@ const connectDB = async () => {
     logger.info(`Connecting to MongoDB (${env} environment)...`);
     logger.info('MongoDB URI:', mongoUri.replace(/\/\/[^:]+:[^@]+@/, '//****:****@')); // Log URI without credentials
     
-    const conn = await mongoose.connect(mongoUri);
+    const conn = await mongoose.connect(mongoUri, {
+      dbName: 'portal-jb' // Explicitly set the database name
+    });
 
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
     logger.info(`Database Name: ${conn.connection.name}`);
