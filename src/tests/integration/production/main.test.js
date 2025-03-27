@@ -9,10 +9,10 @@
  * 4. Have valid production database credentials in your .env file
  */
 
-const logger = require('../../utils/logger');
-const { startTestServer, stopTestServer } = require('./testServer');
-const api = require('./testClient');
-const { initializeTestMetrics, recordTestResult, generateReport } = require('./testUtils');
+const logger = require('../../../utils/logger');
+const { startTestServer, stopTestServer } = require('../testServer');
+const api = require('../testClient');
+const { initializeTestMetrics, recordTestResult, generateReport } = require('../testUtils');
 
 // Safety check function
 const checkEnvironmentSafety = () => {
@@ -72,4 +72,4 @@ describe('Contributor Tests', () => require('./contributor.test'));
 describe('Sponsor Tests', () => require('./sponsor.test'));
 describe('Task Tests', () => require('./task.test'));
 describe('Skill Tests', () => require('./skill.test'));
-describe('Submission Tests', () => require('./submission.test')); 
+describe('Submission Tests', () => require('../submission.test')); 

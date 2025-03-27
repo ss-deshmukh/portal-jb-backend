@@ -1,5 +1,5 @@
-const logger = require('../../utils/logger');
-const api = require('./testClient');
+const logger = require('../../../utils/logger');
+const api = require('../testClient');
 
 const generateUniqueWalletAddress = () => {
   // Base58 characters (excluding 0, O, I, l)

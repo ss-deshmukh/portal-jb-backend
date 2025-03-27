@@ -47,7 +47,7 @@ if (railwayConfig.isRailway) {
 
 // Define environment variables with defaults
 const env = {
-  PORT: process.env.PORT || (railwayConfig.isRailway ? 8080 : 5001), // Use 8080 for Railway, 5001 for local
+  PORT: process.env.PORT || 8080, // Use 8080 consistently across all environments
   NODE_ENV: process.env.NODE_ENV || 'development',
   MONGO_URI_DEV: process.env.MONGO_URI_DEV,
   MONGO_URI_PROD: process.env.MONGO_URI_PROD,

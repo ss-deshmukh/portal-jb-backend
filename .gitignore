@@ -104,4 +104,7 @@ Procfile
 .node_repl_history
 
 # Context files
-context.md 
+context.md
+
+# NPM configuration
+.npmrc 

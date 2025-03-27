@@ -1,5 +1,5 @@
-const api = require('./testClient');
-const logger = require('../../utils/logger');
+const api = require('../testClient');
+const logger = require('../../../utils/logger');
 const mongoose = require('mongoose');
 
 function generateUniqueEmail() {

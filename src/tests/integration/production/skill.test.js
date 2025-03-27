@@ -1,6 +1,6 @@
-const logger = require('../../utils/logger');
+const logger = require('../../../utils/logger');
 const crypto = require('crypto');
-const api = require('./testClient');
+const api = require('../testClient');
 const mongoose = require('mongoose');
 
 // Generate a random skill ID

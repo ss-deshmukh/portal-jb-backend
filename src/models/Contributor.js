@@ -80,12 +80,10 @@ const contributorSchema = new mongoose.Schema({
 });
 
 // Indexes
-contributorSchema.index({ 'basicInfo.email': 1 });
 contributorSchema.index({ 'basicInfo.walletAddress': 1 });
 contributorSchema.index({ 'skills.primarySkills.name': 1 });
 contributorSchema.index({ 'skills.secondarySkills.name': 1 });
-contributorSchema.index({ 'reputation.overallScore': -1 });
-contributorSchema.index({ 'contributionStats.totalTasksCompleted': -1 });
-contributorSchema.index({ 'basicInfo.joinDate': -1 });
+contributorSchema.index({ 'reputation.overallScore': 1 });
+contributorSchema.index({ 'contributionStats.totalTasksCompleted': 1 });
 
 module.exports = mongoose.model('Contributor', contributorSchema); 

@@ -1,6 +1,6 @@
-const logger = require('../../utils/logger');
-const api = require('./testClient');
-const { startTestServer, stopTestServer } = require('./testServer');
+const logger = require('../../../utils/logger');
+const api = require('../testClient');
+const { startTestServer, stopTestServer } = require('../testServer');
 
 describe('Authentication Tests', () => {
   beforeAll(async () => {
