@@ -50,6 +50,21 @@ if (process.env.RAILWAY_ENVIRONMENT) {
       console.log(`${key}: ${process.env[key]}`);
     }
   });
+
+  // Check for Railway-specific environment variables
+  const railwayVars = [
+    'RAILWAY_SERVICE_NAME',
+    'RAILWAY_PROJECT_NAME',
+    'RAILWAY_ENVIRONMENT_NAME',
+    'RAILWAY_PRIVATE_DOMAIN',
+    'RAILWAY_PUBLIC_DOMAIN',
+    'RAILWAY_STATIC_URL'
+  ];
+
+  console.log('\n=== Railway-Specific Variables ===');
+  railwayVars.forEach(varName => {
+    console.log(`${varName}: ${process.env[varName] || 'not set'}`);
+  });
 } else {
   // Load .env file only in development
   console.log('\n=== Loading Development Environment ===');
