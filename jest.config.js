@@ -1,7 +1,8 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: [
-    '**/tests/**/*.test.js',
+    '**/tests/**/local-tests/*.test.js',
+    '**/tests/**/api-tests/test-production*.js',
     '**/tests/**/*.spec.js'
   ],
   setupFilesAfterEnv: ['<rootDir>/src/tests/setup.js'],
