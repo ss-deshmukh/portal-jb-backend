@@ -145,6 +145,20 @@ exports.createTask = async (req, res, next) => {
         taskId,
         sponsorId: validatedTask.sponsorId
       });
+
+      // Update sponsor's taskIds array
+      const updatedSponsor = await Sponsor.findOneAndUpdate(
+        { walletAddress: validatedTask.sponsorId },
+        { $addToSet: { taskIds: taskId } },
+        { new: true }
+      );
+
+      if (!updatedSponsor) {
+        logger.error(`Sponsor ${validatedTask.sponsorId} not found`);
+        throw new NotFoundError('Sponsor');
+      }
+
+      logger.info(`Updated sponsor ${validatedTask.sponsorId} taskIds:`, updatedSponsor.taskIds);
     } catch (saveError) {
       // Enhanced error logging for save operation
       logger.error('Error saving task:', {

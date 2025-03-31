@@ -168,27 +168,6 @@ taskSchema.pre('findOne', function() {
   });
 });
 
-// Add post-save middleware to update sponsor's taskIds
-taskSchema.post('save', async function(doc) {
-  try {
-    // Only update if this is a new document
-    if (doc.isNew) {
-      const result = await Sponsor.findOneAndUpdate(
-        { walletAddress: doc.sponsorId },
-        { $addToSet: { taskIds: doc.id } },
-        { new: true }
-      );
-      if (result) {
-        logger.info(`Added task ID ${doc.id} to sponsor ${doc.sponsorId}, updated taskIds:`, result.taskIds);
-      } else {
-        logger.error(`Sponsor ${doc.sponsorId} not found`);
-      }
-    }
-  } catch (error) {
-    logger.error('Error updating sponsor taskIds:', error);
-  }
-});
-
 // Indexes
 taskSchema.index({ sponsorId: 1 });
 taskSchema.index({ status: 1 });
