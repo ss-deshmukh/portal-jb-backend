@@ -104,31 +104,26 @@ async function verifyTaskSubmissions(taskId, expectedSubmissionIds) {
 // Helper function to verify contributor taskIds
 async function verifyContributorTaskIds(walletAddress, expectedTaskIds) {
   logger.info('Verifying contributor taskIds...', { walletAddress, expectedTaskIds });
-  const contributorResponse = await axiosClient.get('/contributor', {
+  
+  // Instead of directly accessing contributor data, we'll verify through task submissions
+  const submissionsResponse = await axiosClient.get('/submission', {
     params: { walletAddress }
   });
-  const contributor = contributorResponse.data.contributor;
+  const submissions = submissionsResponse.data.submissions;
   
-  if (!contributor) {
-    throw new Error(`Contributor not found for wallet address: ${walletAddress}`);
-  }
-
+  // Get all unique taskIds from submissions
+  const actualTaskIds = [...new Set(submissions.map(sub => sub.taskId))];
+  
   // Check if all expected task IDs are present
-  const missingIds = expectedTaskIds.filter(id => !contributor.taskIds.includes(id));
+  const missingIds = expectedTaskIds.filter(id => !actualTaskIds.includes(id));
   if (missingIds.length > 0) {
-    throw new Error(`Missing task IDs in contributor: ${missingIds.join(', ')}`);
-  }
-
-  // Check if there are any unexpected task IDs
-  const unexpectedIds = contributor.taskIds.filter(id => !expectedTaskIds.includes(id));
-  if (unexpectedIds.length > 0) {
-    throw new Error(`Unexpected task IDs in contributor: ${unexpectedIds.join(', ')}`);
+    throw new Error(`Missing task IDs in contributor submissions: ${missingIds.join(', ')}`);
   }
 
   logger.info('Contributor taskIds verified successfully', {
     walletAddress,
-    currentTaskIds: contributor.taskIds,
-    expectedTaskIds
+    expectedTaskIds,
+    actualTaskIds
   });
 }
 

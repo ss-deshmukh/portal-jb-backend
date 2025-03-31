@@ -1,27 +1,32 @@
 # API Documentation
 
-## Task Endpoints
+## Task Table
 
 ### Create Task
 ```http
 POST /api/task/create
 ```
 
-Creates a new task in the system.
+Creates a new task in the system. Requires sponsor authentication.
 
 **Request Body:**
 ```json
 {
-  "title": "string",
-  "description": "string",
-  "category": ["string"],
-  "skills": ["string"],
-  "requirements": ["string"],
-  "deliverables": ["string"],
-  "reward": number,
-  "deadline": "ISO date string",
-  "priority": "low" | "medium" | "high",
-  "logo": "string (URL)"
+  "task": {
+    "title": "string",
+    "sponsorId": "string",
+    "logo": "string",
+    "description": "string",
+    "requirements": ["string"],
+    "deliverables": ["string"],
+    "deadline": "ISO date string",
+    "reward": number,
+    "postedTime": "ISO date string",
+    "status": "open" | "completed" | "cancelled",
+    "priority": "low" | "medium" | "high" | "urgent",
+    "category": ["string"],
+    "skills": ["string"]
+  }
 }
 ```
 
@@ -30,19 +35,20 @@ Creates a new task in the system.
 {
   "message": "Task created successfully",
   "task": {
-    "_id": "string",
+    "id": "string",
     "title": "string",
+    "sponsorId": "string",
+    "logo": "string",
     "description": "string",
-    "category": ["string"],
-    "skills": ["string"],
     "requirements": ["string"],
     "deliverables": ["string"],
-    "reward": number,
     "deadline": "ISO date string",
+    "reward": number,
+    "postedTime": "ISO date string",
+    "status": "string",
     "priority": "string",
-    "logo": "string",
-    "sponsorId": "string",
-    "status": "open",
+    "category": ["string"],
+    "skills": ["string"],
     "submissions": [],
     "createdAt": "ISO date string",
     "updatedAt": "ISO date string"
@@ -50,21 +56,17 @@ Creates a new task in the system.
 }
 ```
 
-### Fetch All Tasks
+### Fetch Tasks
 ```http
 POST /api/task/fetch
 ```
 
-Retrieves all tasks from the system.
+Retrieves tasks by IDs. All authenticated users can access this endpoint.
 
 **Request Body:**
 ```json
 {
-  "page": number,
-  "limit": number,
-  "category": ["string"],
-  "skills": ["string"],
-  "status": "open" | "in_progress" | "completed" | "cancelled"
+  "ids": ["string"] // Use ["*"] to fetch all tasks
 }
 ```
 
@@ -73,59 +75,20 @@ Retrieves all tasks from the system.
 {
   "tasks": [
     {
-      "_id": "string",
+      "id": "string",
       "title": "string",
+      "sponsorId": "string",
+      "logo": "string",
       "description": "string",
-      "category": ["string"],
-      "skills": ["string"],
       "requirements": ["string"],
       "deliverables": ["string"],
-      "reward": number,
       "deadline": "ISO date string",
-      "priority": "string",
-      "logo": "string",
-      "sponsorId": "string",
+      "reward": number,
+      "postedTime": "ISO date string",
       "status": "string",
-      "submissions": ["string"],
-      "createdAt": "ISO date string",
-      "updatedAt": "ISO date string"
-    }
-  ]
-}
-```
-
-### Fetch Task by ID
-```http
-POST /api/task/fetch
-```
-
-Retrieves a specific task by its ID.
-
-**Request Body:**
-```json
-{
-  "ids": ["string"]
-}
-```
-
-**Response:**
-```json
-{
-  "tasks": [
-    {
-      "_id": "string",
-      "title": "string",
-      "description": "string",
+      "priority": "string",
       "category": ["string"],
       "skills": ["string"],
-      "requirements": ["string"],
-      "deliverables": ["string"],
-      "reward": number,
-      "deadline": "ISO date string",
-      "priority": "string",
-      "logo": "string",
-      "sponsorId": "string",
-      "status": "string",
       "submissions": ["string"],
       "createdAt": "ISO date string",
       "updatedAt": "ISO date string"
@@ -139,23 +102,24 @@ Retrieves a specific task by its ID.
 PUT /api/task/update
 ```
 
-Updates an existing task.
+Updates an existing task. Requires sponsor authentication.
 
 **Request Body:**
 ```json
 {
-  "id": "string",
-  "title": "string",
-  "description": "string",
-  "category": ["string"],
-  "skills": ["string"],
-  "requirements": ["string"],
-  "deliverables": ["string"],
-  "reward": number,
-  "deadline": "ISO date string",
-  "priority": "low" | "medium" | "high",
-  "logo": "string (URL)",
-  "status": "open" | "in_progress" | "completed" | "cancelled"
+  "task": {
+    "id": "string",
+    "title": "string",
+    "description": "string",
+    "requirements": ["string"],
+    "deliverables": ["string"],
+    "deadline": "ISO date string",
+    "reward": number,
+    "status": "open" | "completed" | "cancelled",
+    "priority": "low" | "medium" | "high" | "urgent",
+    "category": ["string"],
+    "skills": ["string"]
+  }
 }
 ```
 
@@ -164,19 +128,20 @@ Updates an existing task.
 {
   "message": "Task updated successfully",
   "task": {
-    "_id": "string",
+    "id": "string",
     "title": "string",
+    "sponsorId": "string",
+    "logo": "string",
     "description": "string",
-    "category": ["string"],
-    "skills": ["string"],
     "requirements": ["string"],
     "deliverables": ["string"],
-    "reward": number,
     "deadline": "ISO date string",
-    "priority": "string",
-    "logo": "string",
-    "sponsorId": "string",
+    "reward": number,
+    "postedTime": "ISO date string",
     "status": "string",
+    "priority": "string",
+    "category": ["string"],
+    "skills": ["string"],
     "submissions": ["string"],
     "createdAt": "ISO date string",
     "updatedAt": "ISO date string"
@@ -189,7 +154,7 @@ Updates an existing task.
 DELETE /api/task
 ```
 
-Deletes a task from the system.
+Deletes a task. Requires sponsor authentication.
 
 **Request Body:**
 ```json
@@ -205,14 +170,14 @@ Deletes a task from the system.
 }
 ```
 
-## Submission Endpoints
+## Submission Table
 
 ### Create Submission
 ```http
 POST /api/submission
 ```
 
-Creates a new submission for a task.
+Creates a new submission for a task. Requires contributor authentication.
 
 **Request Body:**
 ```json
@@ -223,7 +188,10 @@ Creates a new submission for a task.
     "submissionTime": "ISO date string",
     "status": "pending" | "accepted" | "rejected",
     "isAccepted": boolean,
-    "submissions": ["string (URL)"]
+    "feedback": "string",
+    "rating": number,
+    "reviewTime": "ISO date string",
+    "reviewerWalletAddress": "string"
   }
 }
 ```
@@ -233,49 +201,19 @@ Creates a new submission for a task.
 {
   "message": "Submission created successfully",
   "submission": {
-    "_id": "string",
     "id": "string",
     "taskId": "string",
     "walletAddress": "string",
     "submissionTime": "ISO date string",
     "status": "string",
     "isAccepted": boolean,
-    "submissions": ["string"],
+    "feedback": "string",
+    "rating": number,
+    "reviewTime": "ISO date string",
+    "reviewerWalletAddress": "string",
     "createdAt": "ISO date string",
     "updatedAt": "ISO date string"
   }
-}
-```
-
-### Get Submissions
-```http
-GET /api/submission
-```
-
-Retrieves submissions based on query parameters.
-
-**Query Parameters:**
-- `taskId`: Filter submissions by task ID
-- `walletAddress`: Filter submissions by wallet address
-
-**Response:**
-```json
-{
-  "message": "Submissions retrieved successfully",
-  "submissions": [
-    {
-      "_id": "string",
-      "id": "string",
-      "taskId": "string",
-      "walletAddress": "string",
-      "submissionTime": "ISO date string",
-      "status": "string",
-      "isAccepted": boolean,
-      "submissions": ["string"],
-      "createdAt": "ISO date string",
-      "updatedAt": "ISO date string"
-    }
-  ]
 }
 ```
 
@@ -284,7 +222,7 @@ Retrieves submissions based on query parameters.
 DELETE /api/submission
 ```
 
-Deletes a submission from the system.
+Deletes a submission. Requires contributor authentication.
 
 **Request Body:**
 ```json
@@ -300,27 +238,41 @@ Deletes a submission from the system.
 }
 ```
 
-## Authentication
-All task and submission endpoints require authentication using a session token cookie. The token is obtained through the sponsor login process and is automatically handled by the client.
+### Fetch Submissions
+```http
+GET /api/submission
+```
 
-## Error Responses
-All endpoints may return the following error responses:
+Retrieves submissions by task ID or wallet address. All authenticated users can access this endpoint.
 
+**Query Parameters:**
+- `taskId`: Filter submissions by task ID
+- `walletAddress`: Filter submissions by contributor's wallet address
+
+**Response:**
 ```json
 {
-  "message": "string",
-  "status": number
+  "message": "Submissions retrieved successfully",
+  "submissions": [
+    {
+      "id": "string",
+      "taskId": "string",
+      "walletAddress": "string",
+      "submissionTime": "ISO date string",
+      "status": "string",
+      "isAccepted": boolean,
+      "feedback": "string",
+      "rating": number,
+      "reviewTime": "ISO date string",
+      "reviewerWalletAddress": "string",
+      "createdAt": "ISO date string",
+      "updatedAt": "ISO date string"
+    }
+  ]
 }
 ```
 
-Common status codes:
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 500: Internal Server Error
-
-## Contributor Endpoints
+## Contributor Table
 
 ### Register Contributor
 ```http
@@ -332,12 +284,60 @@ Registers a new contributor in the system.
 **Request Body:**
 ```json
 {
-  "basicInfo": {
-    "email": "string",
-    "password": "string",
-    "name": "string"
-  },
-  "walletAddress": "string"
+  "profile": {
+    "basicInfo": {
+      "email": "string",
+      "displayName": "string",
+      "bio": "string",
+      "profileImage": "string",
+      "walletAddress": "string",
+      "website": "string",
+      "x": "string",
+      "discord": "string",
+      "telegram": "string"
+    },
+    "contactPreferences": {
+      "emailNotifications": boolean,
+      "newsletterSubscription": {
+        "subscribed": boolean,
+        "interests": ["string"]
+      },
+      "canBeContactedBySponsors": boolean
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "string",
+        "language": "string"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["string"],
+        "minimumReward": number,
+        "preferredDifficulty": "string",
+        "timeCommitment": "string"
+      },
+      "privacySettings": {
+        "profileVisibility": "string",
+        "submissionVisibility": "string",
+        "skillsVisibility": "string",
+        "reputationVisibility": "string",
+        "contactabilityBySponsors": "string"
+      }
+    },
+    "skills": {
+      "primarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "secondarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "skillTrajectory": {
+        "improvementRate": number,
+        "consistencyScore": number
+      }
+    }
+  }
 }
 ```
 
@@ -349,9 +349,77 @@ Registers a new contributor in the system.
     "_id": "string",
     "basicInfo": {
       "email": "string",
-      "name": "string"
+      "displayName": "string",
+      "bio": "string",
+      "profileImage": "string",
+      "walletAddress": "string",
+      "website": "string",
+      "x": "string",
+      "discord": "string",
+      "telegram": "string"
     },
-    "walletAddress": "string",
+    "contactPreferences": {
+      "emailNotifications": boolean,
+      "newsletterSubscription": {
+        "subscribed": boolean,
+        "interests": ["string"]
+      },
+      "canBeContactedBySponsors": boolean
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "string",
+        "language": "string"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["string"],
+        "minimumReward": number,
+        "preferredDifficulty": "string",
+        "timeCommitment": "string"
+      },
+      "privacySettings": {
+        "profileVisibility": "string",
+        "submissionVisibility": "string",
+        "skillsVisibility": "string",
+        "reputationVisibility": "string",
+        "contactabilityBySponsors": "string"
+      }
+    },
+    "skills": {
+      "primarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "secondarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "skillTrajectory": {
+        "improvementRate": number,
+        "consistencyScore": number
+      }
+    },
+    "reputation": {
+      "overallScore": number,
+      "metrics": {
+        "taskCompletionRate": number,
+        "qualityScore": number,
+        "consistencyScore": number,
+        "communityContributions": number
+      },
+      "badges": [{
+        "name": "string",
+        "description": "string",
+        "category": "string",
+        "difficulty": "string"
+      }]
+    },
+    "contributionStats": {
+      "totalTasksCompleted": number,
+      "totalRewardsEarned": number,
+      "averageQualityRating": number
+    },
+    "taskIds": ["string"],
     "createdAt": "ISO date string",
     "updatedAt": "ISO date string"
   }
@@ -368,8 +436,7 @@ Logs in a contributor.
 **Request Body:**
 ```json
 {
-  "email": "string",
-  "password": "string"
+  "email": "string"
 }
 ```
 
@@ -377,14 +444,19 @@ Logs in a contributor.
 ```json
 {
   "message": "Login successful",
-  "token": "string",
   "contributor": {
     "_id": "string",
     "basicInfo": {
       "email": "string",
-      "name": "string"
-    },
-    "walletAddress": "string"
+      "displayName": "string",
+      "bio": "string",
+      "profileImage": "string",
+      "walletAddress": "string",
+      "website": "string",
+      "x": "string",
+      "discord": "string",
+      "telegram": "string"
+    }
   }
 }
 ```
@@ -394,34 +466,156 @@ Logs in a contributor.
 GET /api/contributor/profile
 ```
 
-Retrieves the current contributor's profile.
+Retrieves the current contributor's profile. Requires contributor authentication.
 
 **Response:**
 ```json
 {
-  "id": "string",
-  "basicInfo": {
-    "email": "string",
-    "name": "string"
-  },
-  "walletAddress": "string",
-  "createdAt": "ISO date string",
-  "updatedAt": "ISO date string"
+  "message": "Profile retrieved successfully",
+  "contributor": {
+    "_id": "string",
+    "basicInfo": {
+      "email": "string",
+      "displayName": "string",
+      "bio": "string",
+      "profileImage": "string",
+      "walletAddress": "string",
+      "website": "string",
+      "x": "string",
+      "discord": "string",
+      "telegram": "string"
+    },
+    "contactPreferences": {
+      "emailNotifications": boolean,
+      "newsletterSubscription": {
+        "subscribed": boolean,
+        "interests": ["string"]
+      },
+      "canBeContactedBySponsors": boolean
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "string",
+        "language": "string"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["string"],
+        "minimumReward": number,
+        "preferredDifficulty": "string",
+        "timeCommitment": "string"
+      },
+      "privacySettings": {
+        "profileVisibility": "string",
+        "submissionVisibility": "string",
+        "skillsVisibility": "string",
+        "reputationVisibility": "string",
+        "contactabilityBySponsors": "string"
+      }
+    },
+    "skills": {
+      "primarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "secondarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "skillTrajectory": {
+        "improvementRate": number,
+        "consistencyScore": number
+      }
+    },
+    "reputation": {
+      "overallScore": number,
+      "metrics": {
+        "taskCompletionRate": number,
+        "qualityScore": number,
+        "consistencyScore": number,
+        "communityContributions": number
+      },
+      "badges": [{
+        "name": "string",
+        "description": "string",
+        "category": "string",
+        "difficulty": "string"
+      }]
+    },
+    "contributionStats": {
+      "totalTasksCompleted": number,
+      "totalRewardsEarned": number,
+      "averageQualityRating": number
+    },
+    "taskIds": ["string"],
+    "createdAt": "ISO date string",
+    "updatedAt": "ISO date string"
+  }
 }
 ```
 
 ### Update Contributor Profile
 ```http
-PUT /api/contributor/update
+PUT /api/contributor/profile
 ```
 
-Updates the current contributor's profile.
+Updates the current contributor's profile. Requires contributor authentication.
 
 **Request Body:**
 ```json
 {
-  "basicInfo": {
-    "name": "string"
+  "email": "string",
+  "updated": {
+    "basicInfo": {
+      "displayName": "string",
+      "bio": "string",
+      "profileImage": "string",
+      "walletAddress": "string",
+      "website": "string",
+      "x": "string",
+      "discord": "string",
+      "telegram": "string"
+    },
+    "contactPreferences": {
+      "emailNotifications": boolean,
+      "newsletterSubscription": {
+        "subscribed": boolean,
+        "interests": ["string"]
+      },
+      "canBeContactedBySponsors": boolean
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "string",
+        "language": "string"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["string"],
+        "minimumReward": number,
+        "preferredDifficulty": "string",
+        "timeCommitment": "string"
+      },
+      "privacySettings": {
+        "profileVisibility": "string",
+        "submissionVisibility": "string",
+        "skillsVisibility": "string",
+        "reputationVisibility": "string",
+        "contactabilityBySponsors": "string"
+      }
+    },
+    "skills": {
+      "primarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "secondarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "skillTrajectory": {
+        "improvementRate": number,
+        "consistencyScore": number
+      }
+    }
   }
 }
 ```
@@ -434,20 +628,88 @@ Updates the current contributor's profile.
     "_id": "string",
     "basicInfo": {
       "email": "string",
-      "name": "string"
+      "displayName": "string",
+      "bio": "string",
+      "profileImage": "string",
+      "walletAddress": "string",
+      "website": "string",
+      "x": "string",
+      "discord": "string",
+      "telegram": "string"
     },
-    "walletAddress": "string",
+    "contactPreferences": {
+      "emailNotifications": boolean,
+      "newsletterSubscription": {
+        "subscribed": boolean,
+        "interests": ["string"]
+      },
+      "canBeContactedBySponsors": boolean
+    },
+    "preferences": {
+      "interfaceSettings": {
+        "theme": "string",
+        "language": "string"
+      },
+      "opportunityPreferences": {
+        "preferredCategories": ["string"],
+        "minimumReward": number,
+        "preferredDifficulty": "string",
+        "timeCommitment": "string"
+      },
+      "privacySettings": {
+        "profileVisibility": "string",
+        "submissionVisibility": "string",
+        "skillsVisibility": "string",
+        "reputationVisibility": "string",
+        "contactabilityBySponsors": "string"
+      }
+    },
+    "skills": {
+      "primarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "secondarySkills": [{
+        "name": "string",
+        "level": "string"
+      }],
+      "skillTrajectory": {
+        "improvementRate": number,
+        "consistencyScore": number
+      }
+    },
+    "reputation": {
+      "overallScore": number,
+      "metrics": {
+        "taskCompletionRate": number,
+        "qualityScore": number,
+        "consistencyScore": number,
+        "communityContributions": number
+      },
+      "badges": [{
+        "name": "string",
+        "description": "string",
+        "category": "string",
+        "difficulty": "string"
+      }]
+    },
+    "contributionStats": {
+      "totalTasksCompleted": number,
+      "totalRewardsEarned": number,
+      "averageQualityRating": number
+    },
+    "taskIds": ["string"],
     "updatedAt": "ISO date string"
   }
 }
 ```
 
-### Delete Contributor
+### Delete Contributor Profile
 ```http
-DELETE /api/contributor/delete
+DELETE /api/contributor/profile
 ```
 
-Deletes the current contributor's account.
+Deletes the current contributor's account. Requires contributor authentication.
 
 **Response:**
 ```json
@@ -456,7 +718,7 @@ Deletes the current contributor's account.
 }
 ```
 
-## Sponsor Endpoints
+## Sponsor Table
 
 ### Register Sponsor
 ```http
@@ -469,16 +731,16 @@ Registers a new sponsor in the system.
 ```json
 {
   "profile": {
-    "name": "string",
-    "description": "string",
-    "website": "string (URL)",
-    "logo": "string (URL)",
-    "contactEmail": "string",
     "walletAddress": "string",
-    "categories": ["string"],
-    "x": "string (URL)",
-    "discord": "string (URL)",
-    "telegram": "string (URL)"
+    "name": "string",
+    "logo": "string",
+    "description": "string",
+    "website": "string",
+    "x": "string",
+    "discord": "string",
+    "telegram": "string",
+    "contactEmail": "string",
+    "categories": ["string"]
   }
 }
 ```
@@ -489,18 +751,19 @@ Registers a new sponsor in the system.
   "message": "Sponsor registered successfully",
   "sponsor": {
     "_id": "string",
-    "profile": {
-      "name": "string",
-      "description": "string",
-      "website": "string",
-      "logo": "string",
-      "contactEmail": "string",
-      "walletAddress": "string",
-      "categories": ["string"],
-      "x": "string",
-      "discord": "string",
-      "telegram": "string"
-    },
+    "walletAddress": "string",
+    "verified": boolean,
+    "name": "string",
+    "logo": "string",
+    "description": "string",
+    "website": "string",
+    "x": "string",
+    "discord": "string",
+    "telegram": "string",
+    "contactEmail": "string",
+    "categories": ["string"],
+    "taskIds": ["string"],
+    "registeredAt": "ISO date string",
     "createdAt": "ISO date string",
     "updatedAt": "ISO date string"
   }
@@ -527,70 +790,75 @@ Logs in a sponsor.
   "message": "Login successful",
   "sponsor": {
     "_id": "string",
-    "profile": {
-      "name": "string",
-      "description": "string",
-      "website": "string",
-      "logo": "string",
-      "contactEmail": "string",
-      "walletAddress": "string",
-      "categories": ["string"],
-      "x": "string",
-      "discord": "string",
-      "telegram": "string"
-    }
+    "walletAddress": "string",
+    "verified": boolean,
+    "name": "string",
+    "logo": "string",
+    "description": "string",
+    "website": "string",
+    "x": "string",
+    "discord": "string",
+    "telegram": "string",
+    "contactEmail": "string",
+    "categories": ["string"],
+    "taskIds": ["string"],
+    "registeredAt": "ISO date string"
   }
 }
 ```
 
 ### Get Sponsor Profile
 ```http
-GET /api/sponsor/profile
+GET /api/sponsor
 ```
 
-Retrieves the current sponsor's profile.
+Retrieves the current sponsor's profile. Requires sponsor authentication.
 
 **Response:**
 ```json
 {
-  "id": "string",
-  "profile": {
+  "message": "Profile retrieved successfully",
+  "sponsor": {
+    "_id": "string",
+    "walletAddress": "string",
+    "verified": boolean,
     "name": "string",
+    "logo": "string",
     "description": "string",
     "website": "string",
-    "logo": "string",
-    "contactEmail": "string",
-    "walletAddress": "string",
-    "categories": ["string"],
     "x": "string",
     "discord": "string",
-    "telegram": "string"
-  },
-  "createdAt": "ISO date string",
-  "updatedAt": "ISO date string"
+    "telegram": "string",
+    "contactEmail": "string",
+    "categories": ["string"],
+    "taskIds": ["string"],
+    "registeredAt": "ISO date string",
+    "createdAt": "ISO date string",
+    "updatedAt": "ISO date string"
+  }
 }
 ```
 
 ### Update Sponsor Profile
 ```http
-PUT /api/sponsor/update
+PUT /api/sponsor
 ```
 
-Updates the current sponsor's profile.
+Updates the current sponsor's profile. Requires sponsor authentication.
 
 **Request Body:**
 ```json
 {
-  "profile": {
+  "updated": {
     "name": "string",
+    "logo": "string",
     "description": "string",
     "website": "string",
-    "logo": "string",
-    "contactEmail": "string",
-    "categories": ["string"],
     "x": "string",
     "discord": "string",
-    "telegram": "string"
+    "telegram": "string",
+    "contactEmail": "string",
+    "categories": ["string"]
   }
 }
 ```
@@ -601,29 +869,30 @@ Updates the current sponsor's profile.
   "message": "Profile updated successfully",
   "sponsor": {
     "_id": "string",
-    "profile": {
-      "name": "string",
-      "description": "string",
-      "website": "string",
-      "logo": "string",
-      "contactEmail": "string",
-      "walletAddress": "string",
-      "categories": ["string"],
-      "x": "string",
-      "discord": "string",
-      "telegram": "string"
-    },
+    "walletAddress": "string",
+    "verified": boolean,
+    "name": "string",
+    "logo": "string",
+    "description": "string",
+    "website": "string",
+    "x": "string",
+    "discord": "string",
+    "telegram": "string",
+    "contactEmail": "string",
+    "categories": ["string"],
+    "taskIds": ["string"],
+    "registeredAt": "ISO date string",
     "updatedAt": "ISO date string"
   }
 }
 ```
 
-### Delete Sponsor
+### Delete Sponsor Profile
 ```http
-DELETE /api/sponsor/delete
+DELETE /api/sponsor
 ```
 
-Deletes the current sponsor's account.
+Deletes the current sponsor's account. Requires sponsor authentication.
 
 **Response:**
 ```json
@@ -632,14 +901,14 @@ Deletes the current sponsor's account.
 }
 ```
 
-## Skill Endpoints
+## Skill Table
 
 ### Create Skill
 ```http
 POST /api/skill/create
 ```
 
-Creates a new skill in the system.
+Creates a new skill in the system. Requires admin authentication.
 
 **Request Body:**
 ```json
@@ -654,6 +923,7 @@ Creates a new skill in the system.
   "message": "Skill created successfully",
   "skill": {
     "_id": "string",
+    "id": "string",
     "name": "string",
     "createdAt": "ISO date string",
     "updatedAt": "ISO date string"
@@ -666,34 +936,56 @@ Creates a new skill in the system.
 GET /api/skill/all
 ```
 
-Retrieves all skills from the system.
+Retrieves all skills from the system. Public endpoint.
 
 **Response:**
 ```json
-[
-  {
+{
+  "message": "Skills retrieved successfully",
+  "skills": [
+    {
+      "_id": "string",
+      "id": "string",
+      "name": "string",
+      "createdAt": "ISO date string",
+      "updatedAt": "ISO date string"
+    }
+  ]
+}
+```
+
+### Get Skill by ID
+```http
+GET /api/skill/:id
+```
+
+Retrieves a specific skill by ID. Public endpoint.
+
+**Response:**
+```json
+{
+  "message": "Skill retrieved successfully",
+  "skill": {
     "_id": "string",
+    "id": "string",
     "name": "string",
     "createdAt": "ISO date string",
     "updatedAt": "ISO date string"
   }
-]
+}
 ```
 
 ### Update Skill
 ```http
-PUT /api/skill
+PUT /api/skill/:id
 ```
 
-Updates an existing skill.
+Updates an existing skill. Requires admin authentication.
 
 **Request Body:**
 ```json
 {
-  "id": "string",
-  "updated": {
-    "name": "string"
-  }
+  "name": "string"
 }
 ```
 
@@ -703,6 +995,7 @@ Updates an existing skill.
   "message": "Skill updated successfully",
   "skill": {
     "_id": "string",
+    "id": "string",
     "name": "string",
     "updatedAt": "ISO date string"
   }
@@ -711,52 +1004,14 @@ Updates an existing skill.
 
 ### Delete Skill
 ```http
-DELETE /api/skill
+DELETE /api/skill/:id
 ```
 
-Deletes a skill from the system.
-
-**Request Body:**
-```json
-{
-  "id": "string"
-}
-```
+Deletes a skill from the system. Requires admin authentication.
 
 **Response:**
 ```json
 {
   "message": "Skill deleted successfully"
 }
-```
-
-## Authentication
-All endpoints require authentication using a session token cookie. The token is obtained through the login process and is automatically handled by the client.
-
-## Rate Limiting
-Login endpoints are rate-limited to 5 requests per 15 minutes to prevent brute force attacks.
-
-## Error Responses
-All endpoints may return the following error responses:
-
-```json
-{
-  "message": "string",
-  "status": "fail"
-}
-```
-
-Common error messages:
-- "Invalid wallet address format": The provided wallet address is not in the correct format
-- "Missing required fields": One or more required fields are missing in the request
-- "User already exists": The email or wallet address is already registered
-- "Invalid credentials": The provided login credentials are incorrect
-- "Not authorized": The user does not have permission to perform the action
-
-Common status codes:
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 429: Too Many Requests
-- 500: Internal Server Error 
+``` 

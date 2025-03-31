@@ -1,8 +1,10 @@
 const Submission = require('../models/Submission');
 const Task = require('../models/Task');
+const Contributor = require('../models/Contributor');
 const crypto = require('crypto');
 const { NotFoundError, ValidationError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const mongoose = require('mongoose');
 
 // Get the submission schema
 const submissionSchema = Submission.schema;
@@ -82,6 +84,16 @@ exports.createSubmission = async (req, res, next) => {
       throw new ValidationError('Task is not open for submissions');
     }
 
+    // Check if contributor already has a submission for this task
+    const existingSubmission = await Submission.findOne({
+      taskId: validatedSubmission.taskId,
+      walletAddress: validatedSubmission.walletAddress
+    });
+
+    if (existingSubmission) {
+      throw new ValidationError('Contributor has already submitted to this task');
+    }
+
     // Create submission data
     const submissionData = {
       id: submissionId,
@@ -148,12 +160,58 @@ exports.createSubmission = async (req, res, next) => {
         mongooseValidationErrors: newSubmission.$errors
       });
 
-      await newSubmission.save();
-      logger.info('Submission saved successfully:', {
-        submissionId,
-        taskId: validatedSubmission.taskId,
-        walletAddress: validatedSubmission.walletAddress
-      });
+      // Start a transaction to ensure data consistency
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        // 1. Save the submission
+        await newSubmission.save({ session });
+        logger.info('Submission saved successfully:', {
+          submissionId,
+          taskId: validatedSubmission.taskId,
+          walletAddress: validatedSubmission.walletAddress
+        });
+
+        // 2. Update task's submissions array
+        task.submissions.push(submissionId);
+        await task.save({ session });
+        logger.info('Task updated with new submission ID:', {
+          taskId: task.id,
+          submissionId
+        });
+
+        // 3. Update contributor's taskIds array
+        const contributor = await Contributor.findOne({ 'basicInfo.walletAddress': validatedSubmission.walletAddress });
+        if (contributor) {
+          if (!contributor.taskIds.includes(validatedSubmission.taskId)) {
+            contributor.taskIds.push(validatedSubmission.taskId);
+            await contributor.save({ session });
+            logger.info('Contributor updated with new task ID:', {
+              walletAddress: validatedSubmission.walletAddress,
+              taskId: validatedSubmission.taskId
+            });
+          }
+        } else {
+          logger.warn('Contributor not found for wallet address:', validatedSubmission.walletAddress);
+        }
+
+        // Commit the transaction
+        await session.commitTransaction();
+        logger.info('Transaction committed successfully');
+
+        res.status(201).json({
+          message: 'Submission created successfully',
+          submission: newSubmission
+        });
+      } catch (error) {
+        // If an error occurred, abort the transaction
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        // End the session
+        session.endSession();
+      }
     } catch (saveError) {
       // Enhanced error logging for save operation
       logger.error('Error saving submission:', {
@@ -190,19 +248,6 @@ exports.createSubmission = async (req, res, next) => {
 
       throw saveError;
     }
-
-    // Add submission ID to task's submissions array
-    task.submissions.push(submissionId);
-    await task.save();
-    logger.info('Task updated with new submission ID:', {
-      taskId: task.id,
-      submissionId
-    });
-
-    res.status(201).json({
-      message: 'Submission created successfully',
-      submission: newSubmission
-    });
   } catch (error) {
     logger.error('Error in createSubmission:', {
       error: error,
@@ -226,27 +271,55 @@ exports.deleteSubmission = async (req, res, next) => {
     // Log the deletion request
     logger.info('Deleting submission:', submissionId);
 
-    // Find submission to get task ID
+    // Find submission to get task ID and wallet address
     const submission = await Submission.findOne({ id: submissionId });
     if (!submission) {
       throw new NotFoundError('Submission');
     }
 
-    // Find and update task to remove submission ID
-    const task = await Task.findOne({ id: submission.taskId });
-    if (task) {
-      task.submissions = task.submissions.filter(subId => subId !== submissionId);
-      await task.save();
+    // Start a transaction to ensure data consistency
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // 1. Update task's submissions array
+      const task = await Task.findOne({ id: submission.taskId });
+      if (task) {
+        task.submissions = task.submissions.filter(subId => subId !== submissionId);
+        await task.save({ session });
+      }
+
+      // 2. Update contributor's taskIds array
+      const contributor = await Contributor.findOne({ 'basicInfo.walletAddress': submission.walletAddress });
+      if (contributor) {
+        contributor.taskIds = contributor.taskIds.filter(id => id !== submission.taskId);
+        await contributor.save({ session });
+        logger.info('Contributor updated - removed task ID:', {
+          walletAddress: submission.walletAddress,
+          taskId: submission.taskId
+        });
+      }
+
+      // 3. Delete submission
+      await Submission.findOneAndDelete({ id: submissionId }).session(session);
+
+      // Commit the transaction
+      await session.commitTransaction();
+      logger.info('Transaction committed successfully');
+
+      logger.info('Submission deleted successfully:', submissionId);
+
+      res.json({
+        message: 'Submission deleted successfully'
+      });
+    } catch (error) {
+      // If an error occurred, abort the transaction
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      // End the session
+      session.endSession();
     }
-
-    // Delete submission
-    await Submission.findOneAndDelete({ id: submissionId });
-
-    logger.info('Submission deleted successfully:', submissionId);
-
-    res.json({
-      message: 'Submission deleted successfully'
-    });
   } catch (error) {
     logger.error('Error deleting submission:', error);
     next(error);
