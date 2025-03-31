@@ -13,6 +13,9 @@ router.get('/', auth, sponsorController.getProfile);
 router.put('/', auth, sponsorValidation, sponsorController.updateProfile);
 router.delete('/', auth, sponsorController.deleteProfile);
 
+// Internal API routes
+router.post('/update-task', auth, sponsorController.updateTaskIds);
+
 // Admin routes
 router.get('/all', auth, sponsorController.getAll);
 

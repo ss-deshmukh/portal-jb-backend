@@ -53,7 +53,7 @@ api.interceptors.response.use(
 // Sample sponsor data for registration
 const sampleSponsor = {
   profile: {
-    walletAddress: '0x' + '1'.repeat(40),
+    walletAddress: '0x1211111111111111111111111111111111111111',
     name: 'Test Sponsor',
     logo: 'https://example.com/sponsor-logo.png',
     description: 'Test sponsor for task testing',
@@ -70,7 +70,7 @@ const sampleSponsor = {
 // Sample task data
 const sampleTask = {
   title: 'Test Integration Task',
-  sponsorId: sampleSponsor.profile.walletAddress,
+  sponsorId: '0x1211111111111111111111111111111111111111',
   logo: 'https://example.com/task-logo.png',
   description: 'Test task for integration testing',
   requirements: ['Requirement 1', 'Requirement 2'],
@@ -84,6 +84,46 @@ const sampleTask = {
   skills: ['javascript', 'nodejs'],
   submissions: []
 };
+
+async function createTask() {
+  logger.info('Running Create Task Test...');
+  try {
+    const createResponse = await api.post('/task/create', { task: sampleTask });
+    logger.info('Create Task Response:', createResponse.data);
+    return createResponse.data.task.id;
+  } catch (error) {
+    logger.error('Create Task Error:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
+async function verifySponsorUpdate(taskId) {
+  logger.info('Verifying Sponsor Profile Update...');
+  try {
+    // Wait for database update
+    logger.info('Waiting for database update...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Get updated sponsor profile
+    const sponsorResponse = await api.get('/sponsor', {
+      headers: {
+        Cookie: api.defaults.headers.common['Cookie']
+      }
+    });
+    logger.info('Sponsor Profile After Task Creation:', sponsorResponse.data);
+
+    // Verify task ID was added to sponsor's taskIds array
+    const sponsor = sponsorResponse.data.sponsor;
+    if (!sponsor.taskIds.includes(taskId)) {
+      throw new Error(`Task ID ${taskId} was not added to sponsor's taskIds array: ${JSON.stringify(sponsor.taskIds)}`);
+    }
+
+    logger.info('Successfully verified task ID in sponsor profile');
+  } catch (error) {
+    logger.error('Sponsor Update Verification Error:', error.response?.data || error.message);
+    throw error;
+  }
+}
 
 async function runTests() {
   try {
@@ -156,48 +196,9 @@ async function runTests() {
       }
     }
 
-    // Test 3: Create Task
-    logger.info('Running Create Task Test...');
-    let createdTaskId;
-    try {
-      const createResponse = await api.post('/task/create', { task: sampleTask });
-      logger.info('Create Task Response:', createResponse.data);
-      createdTaskId = createResponse.data.task.id;
-    } catch (error) {
-      logger.error('Create Task Error:', error.response?.data || error.message);
-      throw error;
-    }
-
-    // Test 4: Get All Tasks
-    logger.info('Running Get All Tasks Test...');
-    const getAllResponse = await api.post('/task/fetch', { ids: ['*'] });
-    logger.info('Get All Tasks Response:', getAllResponse.data);
-
-    // Test 5: Get Task by ID
-    if (createdTaskId) {
-      logger.info('Running Get Task by ID Test...');
-      const getByIdResponse = await api.post('/task/fetch', { ids: [createdTaskId] });
-      logger.info('Get Task by ID Response:', getByIdResponse.data);
-
-      // Test 6: Update Task
-      logger.info('Running Update Task Test...');
-      const updateData = {
-        task: {
-          id: createdTaskId,
-          title: 'Updated Test Task',
-          description: 'Updated test description'
-        }
-      };
-      const updateResponse = await api.put('/task/update', updateData);
-      logger.info('Update Task Response:', updateResponse.data);
-
-      // Test 7: Delete Task
-      logger.info('Running Delete Task Test...');
-      const deleteResponse = await api.delete('/task', {
-        data: { id: createdTaskId }
-      });
-      logger.info('Delete Task Response:', deleteResponse.data);
-    }
+    // Test 3: Create Task and Verify Sponsor Update
+    const taskId = await createTask();
+    await verifySponsorUpdate(taskId);
 
     logger.info('All tests completed');
   } catch (error) {

@@ -3,13 +3,36 @@ const Sponsor = require('../models/Sponsor');
 const crypto = require('crypto');
 const { NotFoundError, ValidationError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const axios = require('axios');
+const mongoose = require('mongoose');
+
+// Configure axios client for internal API calls
+const internalApi = axios.create({
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 
 // Get the task schema
 const taskSchema = Task.schema;
 
 // Generate a random task ID
-const generateTaskId = () => {
+const generateRandomTaskId = () => {
   return crypto.randomBytes(16).toString('hex');
+};
+
+// Generate a random task ID
+const generateTaskId = async (walletAddress) => {
+  try {
+    // Get the current task count and increment it
+    const sponsor = await Sponsor.findOne({ walletAddress });
+    const taskCount = (sponsor?.taskIds?.length || 0) + 1;
+    return `task_${String(taskCount).padStart(3, '0')}`;
+  } catch (error) {
+    logger.error('Error generating task ID:', error);
+    throw error;
+  }
 };
 
 // Validate task data
@@ -73,118 +96,127 @@ const validateTaskData = (task) => {
 };
 
 // Create a new task
-exports.createTask = async (req, res, next) => {
+exports.createTask = async (req, res) => {
   try {
-    const taskId = generateTaskId();
-    const validatedTask = validateTaskData(req.body.task);
-
-    // Create task data
-    const taskData = {
-      id: taskId,
-      ...validatedTask,
-      deadline: new Date(validatedTask.deadline),
-      postedTime: new Date(validatedTask.postedTime)
-    };
-
-    const newTask = new Task(taskData);
-
-    // Log the task object before saving
-    logger.info('Attempting to save task:', {
-      taskObject: JSON.stringify(newTask.toObject()),
-      validationErrors: newTask.validateSync(),
-      taskId,
-      sponsorId: validatedTask.sponsorId,
-      status: validatedTask.status
-    });
-
-    try {
-      // Validate the task before saving
-      const validationError = newTask.validateSync();
-      if (validationError) {
-        logger.error('Validation error before save:', {
-          error: validationError.toString(),
-          validationErrors: validationError.errors ? Object.entries(validationError.errors).map(([key, error]) => ({
-            field: key,
-            message: error.message,
-            value: error.value,
-            kind: error.kind,
-            path: error.path,
-            reason: error.reason
-          })) : null,
-          details: validationError.message,
-          taskData: newTask.toObject(),
-          stack: validationError.stack
-        });
-
-        // Log each field's validation result
-        Object.keys(taskSchema.paths).forEach(path => {
-          const validationResult = newTask.validateSync(path);
-          if (validationResult) {
-            logger.error(`Validation error for ${path}:`, validationResult);
-          }
-        });
-
-        throw validationError;
-      }
-
-      // Log the exact task data being saved
-      logger.info('Attempting to save task with data:', {
-        taskData: newTask.toObject(),
-        schema: taskSchema.paths,
-        validationState: {
-          id: newTask.$isValid('id'),
-          sponsorId: newTask.$isValid('sponsorId'),
-          status: newTask.$isValid('status')
-        },
-        mongooseValidationState: newTask.$isValid(),
-        mongooseValidationErrors: newTask.$errors
-      });
-
-      await newTask.save();
-      logger.info('Task saved successfully:', {
-        taskId,
-        sponsorId: validatedTask.sponsorId
-      });
-    } catch (saveError) {
-      // Enhanced error logging for save operation
-      logger.error('Error saving task:', {
-        error: saveError,
-        name: saveError.name,
-        code: saveError.code,
-        message: saveError.message,
-        validationErrors: saveError.errors ? Object.entries(saveError.errors).map(([key, error]) => ({
-          field: key,
-          message: error.message,
-          value: error.value,
-          kind: error.kind,
-          path: error.path,
-          reason: error.reason
-        })) : null,
-        taskData: newTask.toObject(),
-        stack: saveError.stack,
-        mongooseValidationState: {
-          id: newTask.$isValid('id'),
-          sponsorId: newTask.$isValid('sponsorId'),
-          status: newTask.$isValid('status')
-        },
-        mongooseValidationErrors: newTask.$errors,
-        schemaValidation: Object.entries(taskSchema.paths).map(([path, schema]) => ({
-          path,
-          type: schema.instance,
-          required: schema.isRequired,
-          validation: schema.validators
-        }))
-      });
-
-      throw saveError;
+    const taskData = req.body.task;
+    if (!taskData) {
+      return res.status(400).json({ message: 'Task data is required' });
     }
 
-    res.status(201).json({
-      message: 'Task created successfully',
-      task: newTask
+    // Verify sponsor's ID matches authenticated user
+    if (taskData.sponsorId !== req.user.walletAddress) {
+      return res.status(403).json({ message: 'Unauthorized: Sponsor ID mismatch' });
+    }
+
+    // Get the sponsor first to ensure they exist
+    const sponsor = await Sponsor.findOne({ walletAddress: taskData.sponsorId });
+    if (!sponsor) {
+      return res.status(404).json({ message: 'Sponsor not found' });
+    }
+
+    // Create task data with validated information
+    const task = new Task({
+      id: generateRandomTaskId(),
+      title: taskData.title,
+      sponsorId: taskData.sponsorId,
+      logo: taskData.logo,
+      description: taskData.description,
+      requirements: taskData.requirements,
+      deliverables: taskData.deliverables,
+      deadline: taskData.deadline,
+      reward: taskData.reward,
+      postedTime: taskData.postedTime,
+      status: taskData.status,
+      priority: taskData.priority,
+      category: taskData.category,
+      skills: taskData.skills,
+      submissions: taskData.submissions || []
+    });
+
+    // Log task object and validation errors before saving
+    console.log('Task object before save:', task);
+    const validationError = task.validateSync();
+    if (validationError) {
+      console.error('Validation errors:', validationError);
+      return res.status(400).json({ message: 'Invalid task data', errors: validationError });
+    }
+
+    try {
+      // Save the task
+      const savedTask = await task.save();
+      console.log('Task saved successfully:', savedTask);
+
+      // Update sponsor's taskIds array using findByIdAndUpdate
+      const updatedSponsor = await Sponsor.findByIdAndUpdate(
+        sponsor._id,
+        { $addToSet: { taskIds: savedTask.id } },
+        { new: true }
+      );
+
+      if (!updatedSponsor) {
+        // If sponsor update fails, delete the task
+        await Task.findOneAndDelete({ id: savedTask.id });
+        return res.status(404).json({ message: 'Failed to update sponsor profile' });
+      }
+
+      // Log the successful update
+      console.log('Sponsor updated successfully:', {
+        taskId: savedTask.id,
+        sponsorId: updatedSponsor._id,
+        taskIds: updatedSponsor.taskIds,
+        sponsorWallet: updatedSponsor.walletAddress
+      });
+
+      // Return the created task
+      res.status(201).json({ 
+        message: 'Task created successfully',
+        task: savedTask
+      });
+    } catch (error) {
+      // If any error occurs during sponsor update, delete the task
+      if (task._id) {
+        await Task.findOneAndDelete({ id: task.id });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error creating task:', error);
+    res.status(500).json({ message: 'Error creating task', error: error.message });
+  }
+};
+
+// Update sponsor with new task ID
+exports.updateSponsorWithTaskId = async (req, res) => {
+  try {
+    const { taskId } = req.body;
+    if (!taskId) {
+      return res.status(400).json({ message: 'Task ID is required' });
+    }
+
+    // Get current sponsor profile
+    const sponsor = await Sponsor.findOne({ _id: req.user.id });
+    if (!sponsor) {
+      return res.status(404).json({ message: 'Sponsor not found' });
+    }
+
+    // Update sponsor's taskIds array
+    const updatedSponsor = await Sponsor.findOneAndUpdate(
+      { _id: req.user.id },
+      { $addToSet: { taskIds: taskId } },
+      { new: true }
+    );
+
+    if (!updatedSponsor) {
+      return res.status(404).json({ message: 'Failed to update sponsor profile' });
+    }
+
+    res.status(200).json({ 
+      message: 'Sponsor updated successfully',
+      sponsor: updatedSponsor
     });
   } catch (error) {
-    next(error);
+    console.error('Error updating sponsor with task ID:', error);
+    res.status(500).json({ message: 'Error updating sponsor profile', error: error.message });
   }
 };
 
