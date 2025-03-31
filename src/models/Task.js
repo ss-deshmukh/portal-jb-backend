@@ -173,11 +173,16 @@ taskSchema.post('save', async function(doc) {
   try {
     // Only update if this is a new document
     if (doc.isNew) {
-      await Sponsor.findOneAndUpdate(
+      const result = await Sponsor.findOneAndUpdate(
         { walletAddress: doc.sponsorId },
-        { $addToSet: { taskIds: doc.id } }
+        { $addToSet: { taskIds: doc.id } },
+        { new: true }
       );
-      logger.info(`Added task ID ${doc.id} to sponsor ${doc.sponsorId}`);
+      if (result) {
+        logger.info(`Added task ID ${doc.id} to sponsor ${doc.sponsorId}, updated taskIds:`, result.taskIds);
+      } else {
+        logger.error(`Sponsor ${doc.sponsorId} not found`);
+      }
     }
   } catch (error) {
     logger.error('Error updating sponsor taskIds:', error);
