@@ -254,16 +254,22 @@ exports.deleteTask = async (req, res, next) => {
       throw new NotFoundError('Task');
     }
 
-    // Update sponsor's taskIds array
-    await Sponsor.findOneAndUpdate(
+    // Update sponsor's taskIds array to remove the task ID
+    const updatedSponsor = await Sponsor.findOneAndUpdate(
       { walletAddress: task.sponsorId },
-      { $pull: { taskIds: id } }
+      { $pull: { taskIds: id } },
+      { new: true }
     );
+
+    if (!updatedSponsor) {
+      logger.error(`Sponsor ${task.sponsorId} not found`);
+      throw new NotFoundError('Sponsor');
+    }
+
+    logger.info(`Removed task ID ${id} from sponsor ${task.sponsorId}, updated taskIds:`, updatedSponsor.taskIds);
 
     // Delete task
     await Task.findOneAndDelete({ id });
-
-    logger.info('Task deleted successfully:', id);
 
     res.json({
       message: 'Task deleted successfully'
