@@ -65,6 +65,68 @@ const sampleSubmission = {
   submissions: ['https://github.com/test/repo', 'https://example.com/demo']
 };
 
+const sampleSubmission2 = {
+  taskId: '', // Will be set after task creation
+  walletAddress: '0x2222222222222222222222222222222222222222', // Different wallet address
+  submissionTime: new Date().toISOString(),
+  status: 'pending',
+  isAccepted: false,
+  submissions: ['https://github.com/test/repo2', 'https://example.com/demo2']
+};
+
+// Helper function to verify task submissions
+async function verifyTaskSubmissions(taskId, expectedSubmissionIds) {
+  logger.info('Verifying task submissions...', { taskId, expectedSubmissionIds });
+  const taskResponse = await axiosClient.post('/task/fetch', {
+    ids: [taskId]
+  });
+  const task = taskResponse.data.tasks[0];
+  
+  // Check if all expected submission IDs are present
+  const missingIds = expectedSubmissionIds.filter(id => !task.submissions.includes(id));
+  if (missingIds.length > 0) {
+    throw new Error(`Missing submission IDs in task: ${missingIds.join(', ')}`);
+  }
+
+  // Check if there are any unexpected submission IDs
+  const unexpectedIds = task.submissions.filter(id => !expectedSubmissionIds.includes(id));
+  if (unexpectedIds.length > 0) {
+    throw new Error(`Unexpected submission IDs in task: ${unexpectedIds.join(', ')}`);
+  }
+
+  logger.info('Task submissions verified successfully', {
+    taskId,
+    currentSubmissions: task.submissions,
+    expectedSubmissions: expectedSubmissionIds
+  });
+}
+
+// Helper function to verify contributor taskIds
+async function verifyContributorTaskIds(walletAddress, expectedTaskIds) {
+  logger.info('Verifying contributor taskIds...', { walletAddress, expectedTaskIds });
+  
+  // Instead of directly accessing contributor data, we'll verify through task submissions
+  const submissionsResponse = await axiosClient.get('/submission', {
+    params: { walletAddress }
+  });
+  const submissions = submissionsResponse.data.submissions;
+  
+  // Get all unique taskIds from submissions
+  const actualTaskIds = [...new Set(submissions.map(sub => sub.taskId))];
+  
+  // Check if all expected task IDs are present
+  const missingIds = expectedTaskIds.filter(id => !actualTaskIds.includes(id));
+  if (missingIds.length > 0) {
+    throw new Error(`Missing task IDs in contributor submissions: ${missingIds.join(', ')}`);
+  }
+
+  logger.info('Contributor taskIds verified successfully', {
+    walletAddress,
+    expectedTaskIds,
+    actualTaskIds
+  });
+}
+
 async function runTests() {
   try {
     // Health Check
@@ -126,16 +188,42 @@ async function runTests() {
       throw new Error('Task creation failed - no task ID returned');
     }
     
-    sampleSubmission.taskId = createTaskResponse.data.task.id;
+    const taskId = createTaskResponse.data.task.id;
+    sampleSubmission.taskId = taskId;
+    sampleSubmission2.taskId = taskId;  // Set taskId for second submission
     logger.info('Set submission taskId to:', sampleSubmission.taskId);
 
-    // Create Submission
-    logger.info('Running Create Submission Test...');
+    // Verify initial state
+    await verifyTaskSubmissions(taskId, []);
+    await verifyContributorTaskIds(sampleSubmission.walletAddress, []);
+    await verifyContributorTaskIds(sampleSubmission2.walletAddress, []);
+
+    // Create First Submission
+    logger.info('Running Create First Submission Test...');
     logger.info('Submission payload:', { submission: sampleSubmission });
-    const createSubmissionResponse = await axiosClient.post('/submission', {
+    const createFirstSubmissionResponse = await axiosClient.post('/submission', {
       submission: sampleSubmission
     });
-    logger.info('Create Submission Response:', createSubmissionResponse.data);
+    logger.info('Create First Submission Response:', createFirstSubmissionResponse.data);
+    const firstSubmissionId = createFirstSubmissionResponse.data.submission.id;
+
+    // Verify task submissions and contributor taskIds after first submission
+    await verifyTaskSubmissions(taskId, [firstSubmissionId]);
+    await verifyContributorTaskIds(sampleSubmission.walletAddress, [taskId]);
+    await verifyContributorTaskIds(sampleSubmission2.walletAddress, []);
+
+    // Create Second Submission
+    logger.info('Running Create Second Submission Test...');
+    const createSecondSubmissionResponse = await axiosClient.post('/submission', {
+      submission: sampleSubmission2
+    });
+    logger.info('Create Second Submission Response:', createSecondSubmissionResponse.data);
+    const secondSubmissionId = createSecondSubmissionResponse.data.submission.id;
+
+    // Verify task submissions and contributor taskIds after second submission
+    await verifyTaskSubmissions(taskId, [firstSubmissionId, secondSubmissionId]);
+    await verifyContributorTaskIds(sampleSubmission.walletAddress, [taskId]);
+    await verifyContributorTaskIds(sampleSubmission2.walletAddress, [taskId]);
 
     // Get All Submissions
     logger.info('Running Get All Submissions Test...');
@@ -144,24 +232,34 @@ async function runTests() {
     });
     logger.info('Get All Submissions Response:', getAllSubmissionsResponse.data);
 
-    // Get Submission by ID
-    logger.info('Running Get Submission by ID Test...');
-    const getSubmissionResponse = await axiosClient.get('/submission', {
-      params: { taskId: sampleSubmission.taskId }
+    // Delete First Submission
+    logger.info('Running Delete First Submission Test...');
+    const deleteFirstSubmissionResponse = await axiosClient.delete('/submission', {
+      data: { submissionId: firstSubmissionId }
     });
-    logger.info('Get Submission by ID Response:', getSubmissionResponse.data);
+    logger.info('Delete First Submission Response:', deleteFirstSubmissionResponse.data);
 
-    // Delete Submission
-    logger.info('Running Delete Submission Test...');
-    const deleteSubmissionResponse = await axiosClient.delete('/submission', {
-      data: { submissionId: createSubmissionResponse.data.submission.id }
+    // Verify task submissions and contributor taskIds after first submission deletion
+    await verifyTaskSubmissions(taskId, [secondSubmissionId]);
+    await verifyContributorTaskIds(sampleSubmission.walletAddress, []);
+    await verifyContributorTaskIds(sampleSubmission2.walletAddress, [taskId]);
+
+    // Delete Second Submission
+    logger.info('Running Delete Second Submission Test...');
+    const deleteSecondSubmissionResponse = await axiosClient.delete('/submission', {
+      data: { submissionId: secondSubmissionId }
     });
-    logger.info('Delete Submission Response:', deleteSubmissionResponse.data);
+    logger.info('Delete Second Submission Response:', deleteSecondSubmissionResponse.data);
+
+    // Verify task submissions and contributor taskIds after second submission deletion
+    await verifyTaskSubmissions(taskId, []);
+    await verifyContributorTaskIds(sampleSubmission.walletAddress, []);
+    await verifyContributorTaskIds(sampleSubmission2.walletAddress, []);
 
     // Delete Task
     logger.info('Running Delete Task Test...');
     const deleteTaskResponse = await axiosClient.delete('/task', {
-      data: { id: sampleSubmission.taskId }
+      data: { id: taskId }
     });
     logger.info('Delete Task Response:', deleteTaskResponse.data);
 

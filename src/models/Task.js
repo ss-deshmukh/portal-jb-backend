@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
+const Sponsor = require('./Sponsor');
 
 const taskSchema = new mongoose.Schema({
   id: { 

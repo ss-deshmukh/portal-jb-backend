@@ -163,6 +163,15 @@ async function runTests() {
       const createResponse = await api.post('/task/create', { task: sampleTask });
       logger.info('Create Task Response:', createResponse.data);
       createdTaskId = createResponse.data.task.id;
+
+      // Verify sponsor's taskIds
+      logger.info('Verifying sponsor taskIds...');
+      const sponsorResponse = await api.get('/sponsor', {
+        headers: {
+          Authorization: `Bearer ${api.defaults.headers.common.Cookie.split('=')[1]}`
+        }
+      });
+      logger.info('Sponsor Data After Task Creation:', sponsorResponse.data);
     } catch (error) {
       logger.error('Create Task Error:', error.response?.data || error.message);
       throw error;
@@ -197,6 +206,13 @@ async function runTests() {
         data: { id: createdTaskId }
       });
       logger.info('Delete Task Response:', deleteResponse.data);
+
+      // Verify sponsor's taskIds after deletion
+      logger.info('Verifying sponsor taskIds after deletion...');
+      const sponsorResponseAfterDelete = await api.get('/sponsor', {
+        headers: { Authorization: `Bearer ${api.defaults.headers.common.Cookie.split('=')[1]}` }
+      });
+      logger.info('Sponsor Data After Task Deletion:', sponsorResponseAfterDelete.data);
     }
 
     logger.info('All tests completed');
