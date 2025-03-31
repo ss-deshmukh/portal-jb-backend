@@ -94,8 +94,8 @@ exports.login = async (req, res) => {
 // Get sponsor profile
 exports.getProfile = async (req, res) => {
   try {
-    // Find sponsor by wallet address from auth middleware
-    const sponsor = await Sponsor.findOne({ walletAddress: req.user.walletAddress });
+    // Find sponsor by ID from auth middleware
+    const sponsor = await Sponsor.findById(req.user.id);
     if (!sponsor) {
       return res.status(404).json({
         message: 'Sponsor not found'
@@ -120,21 +120,22 @@ exports.updateProfile = async (req, res) => {
   try {
     const { updated } = req.body;
 
-    // Remove registeredAt from update if present
-    const { registeredAt, ...updateData } = updated;
-
-    // Update sponsor using findOneAndUpdate
-    const sponsor = await Sponsor.findOneAndUpdate(
-      { _id: req.user.id },
-      { $set: updateData },
-      { new: true }
-    );
-
+    // Find sponsor by ID from auth middleware
+    const sponsor = await Sponsor.findById(req.user.id);
     if (!sponsor) {
       return res.status(404).json({
         message: 'Sponsor not found'
       });
     }
+
+    // Update fields
+    Object.keys(updated).forEach(key => {
+      if (key !== 'registeredAt') {
+        sponsor[key] = updated[key];
+      }
+    });
+
+    await sponsor.save();
 
     res.json({
       message: 'Profile updated successfully',
@@ -184,91 +185,6 @@ exports.getAll = async (req, res) => {
     console.error('Get all sponsors error:', error);
     res.status(500).json({
       message: 'Error retrieving sponsors',
-      error: error.message
-    });
-  }
-};
-
-// Update sponsor's task IDs array
-exports.updateTaskIds = async (req, res) => {
-  try {
-    const { taskId, sponsorId } = req.body;
-    
-    console.log('Updating sponsor task IDs:', {
-      taskId,
-      sponsorId,
-      userId: req.user?.id,
-      userWallet: req.user?.walletAddress,
-      headers: req.headers
-    });
-    
-    if (!taskId || !sponsorId) {
-      return res.status(400).json({
-        message: 'Task ID and sponsor ID are required'
-      });
-    }
-
-    // Get the sponsor by ID
-    const sponsor = await Sponsor.findById(sponsorId);
-    if (!sponsor) {
-      console.log('Sponsor not found:', { sponsorId });
-      return res.status(404).json({
-        message: 'Sponsor not found'
-      });
-    }
-
-    // For internal API calls, verify using the X-User headers
-    if (req.headers['x-user-wallet']) {
-      if (sponsor.walletAddress !== req.headers['x-user-wallet']) {
-        console.log('Authorization failed - wallet mismatch:', {
-          sponsorWallet: sponsor.walletAddress,
-          userWallet: req.headers['x-user-wallet']
-        });
-        return res.status(403).json({
-          message: 'Unauthorized: Wallet address mismatch'
-        });
-      }
-    } else {
-      // For regular API calls, verify using the authenticated user
-      if (!req.user || !req.user.walletAddress || sponsor.walletAddress !== req.user.walletAddress) {
-        console.log('Authorization failed - user mismatch:', {
-          sponsorWallet: sponsor.walletAddress,
-          userWallet: req.user?.walletAddress || 'not provided'
-        });
-        return res.status(403).json({
-          message: 'Unauthorized: You can only update your own profile'
-        });
-      }
-    }
-
-    // Update sponsor's taskIds array using findOneAndUpdate
-    const updatedSponsor = await Sponsor.findOneAndUpdate(
-      { _id: sponsorId },
-      { $addToSet: { taskIds: taskId } },
-      { new: true }
-    );
-
-    console.log('Sponsor updated successfully:', {
-      sponsorId: updatedSponsor._id,
-      taskIds: updatedSponsor.taskIds,
-      newTaskId: taskId
-    });
-
-    res.json({
-      message: 'Sponsor task IDs updated successfully',
-      sponsor: updatedSponsor
-    });
-  } catch (error) {
-    console.error('Update task IDs error:', {
-      error: error.message,
-      stack: error.stack,
-      sponsorId: req.body.sponsorId,
-      taskId: req.body.taskId,
-      user: req.user,
-      headers: req.headers
-    });
-    res.status(500).json({
-      message: 'Error updating sponsor task IDs',
       error: error.message
     });
   }

@@ -61,18 +61,18 @@ prodClient.interceptors.response.use(
 
 // Sample test data (from sample-data/sponsors.json)
 const sampleSponsor = {
-  walletAddress: "0x1211111111111111111111111111111111111111",
+  walletAddress: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   verified: true,
-  name: "Test Sponsor",
-  logo: "https://example.com/logos/test-sponsor.png",
-  description: "Test sponsor for testing",
-  website: "https://example.com",
-  x: "@test",
-  discord: "test",
-  telegram: "test",
-  contactEmail: "test@example.com",
-  categories: ["development", "design"],
-  taskIds: [],
+  name: "Ethereum Foundation",
+  logo: "https://example.com/logos/ethereum-foundation.png",
+  description: "Supporting Ethereum development and research",
+  website: "https://ethereum.org",
+  x: "@ethereum",
+  discord: "ethereum",
+  telegram: "ethereum",
+  contactEmail: "contact@ethereum.org",
+  categories: ["Smart Contracts", "Layer 2", "Research"],
+  taskIds: ["task_001", "task_004", "task_007"],
   registeredAt: "2024-01-01T00:00:00Z"
 };
 
@@ -164,41 +164,17 @@ async function runTests() {
   // Test 5: Update Sponsor Profile
   logger.info('Testing update sponsor profile...');
   try {
-    // First get the current sponsor profile to see existing taskIds
-    const currentProfile = await prodClient.get('/sponsor');
-    logger.info('Current sponsor profile:', {
-      taskIds: currentProfile.data.sponsor.taskIds
-    });
-
-    // Create updated sponsor data with new task ID
     const updateData = {
       updated: {
-        ...currentProfile.data.sponsor,
-        taskIds: [...(currentProfile.data.sponsor.taskIds || []), "task_004"],
-        description: "Updated description: Test sponsor for testing",
-        categories: ["development", "design", "testing"],
-        registeredAt: undefined // Explicitly exclude registeredAt
+        ...sampleSponsor,
+        description: "Updated description: Supporting Ethereum development, research, and innovation",
+        categories: ["Smart Contracts", "Layer 2", "Research", "Innovation"]
       }
     };
-
-    logger.info('Attempting to update sponsor with new taskId:', {
-      currentTaskIds: currentProfile.data.sponsor.taskIds,
-      newTaskId: "task_004"
-    });
-
     const updateResponse = await prodClient.put('/sponsor', updateData);
-    logger.info('Profile updated successfully:', {
-      updatedTaskIds: updateResponse.data.sponsor.taskIds
-    });
+    logger.info('Profile updated successfully:', updateResponse.data);
   } catch (error) {
     logger.error('Update profile failed:', error.message);
-    if (error.response) {
-      logger.error('Update error details:', {
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers
-      });
-    }
   }
 
   // Test 6: Get All Sponsors (Admin only)
