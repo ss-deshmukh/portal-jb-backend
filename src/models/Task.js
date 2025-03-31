@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const logger = require('../utils/logger');
+const Sponsor = require('./Sponsor');
 
 const taskSchema = new mongoose.Schema({
   id: { 
@@ -165,6 +166,22 @@ taskSchema.pre('findOne', function() {
   logger.info('Finding task:', {
     query: JSON.stringify(this.getQuery())
   });
+});
+
+// Add post-save middleware to update sponsor's taskIds
+taskSchema.post('save', async function(doc) {
+  try {
+    // Only update if this is a new document
+    if (doc.isNew) {
+      await Sponsor.findOneAndUpdate(
+        { walletAddress: doc.sponsorId },
+        { $addToSet: { taskIds: doc.id } }
+      );
+      logger.info(`Added task ID ${doc.id} to sponsor ${doc.sponsorId}`);
+    }
+  } catch (error) {
+    logger.error('Error updating sponsor taskIds:', error);
+  }
 });
 
 // Indexes
