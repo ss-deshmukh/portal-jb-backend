@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Skill = require('./Skill');
 
 const contributorSchema = new mongoose.Schema({
   basicInfo: {
@@ -42,10 +43,12 @@ const contributorSchema = new mongoose.Schema({
   },
   skills: {
     primarySkills: [{
+      skillId: { type: String, required: true },
       name: { type: String },
       level: { type: String }
     }],
     secondarySkills: [{
+      skillId: { type: String, required: true },
       name: { type: String },
       level: { type: String }
     }],
@@ -81,8 +84,8 @@ const contributorSchema = new mongoose.Schema({
 
 // Indexes
 contributorSchema.index({ 'basicInfo.walletAddress': 1 });
-contributorSchema.index({ 'skills.primarySkills.name': 1 });
-contributorSchema.index({ 'skills.secondarySkills.name': 1 });
+contributorSchema.index({ 'skills.primarySkills.skillId': 1 });
+contributorSchema.index({ 'skills.secondarySkills.skillId': 1 });
 contributorSchema.index({ 'reputation.overallScore': 1 });
 contributorSchema.index({ 'contributionStats.totalTasksCompleted': 1 });
 

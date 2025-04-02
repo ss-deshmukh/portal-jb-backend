@@ -1,6 +1,7 @@
 const Contributor = require('../models/Contributor');
 const { validateEmail } = require('../middleware/validation');
 const jwt = require('jsonwebtoken');
+const Skill = require('../models/Skill');
 
 // Get AUTH_SECRET from environment variables
 const AUTH_SECRET = process.env.AUTH_SECRET;
@@ -211,31 +212,39 @@ exports.login = async (req, res) => {
 // Get contributor profile
 exports.getProfile = async (req, res) => {
   try {
-    const contributorId = req.user.id;
-    if (!contributorId) {
-      return res.status(401).json({
-        message: 'No token provided'
-      });
-    }
-
-    // Find contributor by ID
-    const contributor = await Contributor.findById(contributorId);
+    const contributor = await Contributor.findOne({ 'basicInfo.email': req.user.email });
     if (!contributor) {
-      return res.status(404).json({
-        message: 'Contributor not found'
-      });
+      return res.status(404).json({ message: 'Contributor not found' });
     }
 
-    res.json({
-      message: 'Profile retrieved successfully',
-      contributor
+    // Get all skill IDs from primary and secondary skills
+    const skillIds = [
+      ...contributor.skills.primarySkills.map(skill => skill.skillId),
+      ...contributor.skills.secondarySkills.map(skill => skill.skillId)
+    ];
+    
+    // Fetch all skills in one query
+    const skills = await Skill.find({ id: { $in: skillIds } });
+    
+    // Create a map of skill IDs to skill names
+    const skillMap = {};
+    skills.forEach(skill => {
+      skillMap[skill.id] = skill.name;
     });
+    
+    // Add skill names to the contributor object
+    contributor.skills.primarySkills.forEach(skill => {
+      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+    });
+    
+    contributor.skills.secondarySkills.forEach(skill => {
+      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+    });
+
+    res.json({ message: 'Contributor profile retrieved successfully', data: contributor });
   } catch (error) {
-    console.error('Profile retrieval error:', error);
-    res.status(500).json({
-      message: 'Error retrieving profile',
-      error: error.message
-    });
+    console.error('Error retrieving contributor profile:', error);
+    res.status(500).json({ message: 'Error retrieving contributor profile' });
   }
 };
 
@@ -367,23 +376,41 @@ exports.getAll = async (req, res) => {
   try {
     // Check if user is admin
     if (req.user.role !== 'admin') {
-      return res.status(403).json({
-        message: 'Admin access required'
-      });
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
 
-    // Get all contributors
     const contributors = await Contributor.find({}, '-__v');
     
-    res.json({
-      message: 'Contributors retrieved successfully',
-      contributors
+    // Get all skill IDs from all contributors
+    const skillIds = new Set();
+    contributors.forEach(contributor => {
+      contributor.skills.primarySkills.forEach(skill => skillIds.add(skill.skillId));
+      contributor.skills.secondarySkills.forEach(skill => skillIds.add(skill.skillId));
     });
+    
+    // Fetch all skills in one query
+    const skills = await Skill.find({ id: { $in: Array.from(skillIds) } });
+    
+    // Create a map of skill IDs to skill names
+    const skillMap = {};
+    skills.forEach(skill => {
+      skillMap[skill.id] = skill.name;
+    });
+    
+    // Add skill names to each contributor object
+    contributors.forEach(contributor => {
+      contributor.skills.primarySkills.forEach(skill => {
+        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      });
+      
+      contributor.skills.secondarySkills.forEach(skill => {
+        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      });
+    });
+
+    res.json({ message: 'Contributors retrieved successfully', data: contributors });
   } catch (error) {
-    console.error('Get all contributors error:', error);
-    res.status(500).json({
-      message: 'Error retrieving contributors',
-      error: error.message
-    });
+    console.error('Error retrieving contributors:', error);
+    res.status(500).json({ message: 'Error retrieving contributors' });
   }
 }; 

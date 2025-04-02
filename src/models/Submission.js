@@ -36,6 +36,16 @@ const submissionSchema = new mongoose.Schema({
       message: 'Wallet address must be a non-empty string'
     }
   },
+  submissionContent: {
+    type: String,
+    required: true,
+    validate: {
+      validator: function(v) {
+        return typeof v === 'string' && v.length > 0;
+      },
+      message: 'Submission content must be a non-empty string'
+    }
+  },
   submissionTime: {
     type: Date,
     required: true,
