@@ -95,8 +95,8 @@ const validateContributorProfile = (profile, isUpdate = false) => {
         errors.push('Primary skills must be an array');
       } else {
         profile.skills.primarySkills.forEach((skill, index) => {
-          if (!skill.name) {
-            errors.push(`Primary skill ${index + 1} must have a name`);
+          if (!skill.skillId) {
+            errors.push(`Primary skill ${index + 1} must have a skillId`);
           }
           if (!['beginner', 'intermediate', 'advanced', 'expert'].includes(skill.level)) {
             errors.push(`Invalid skill level for primary skill ${index + 1}`);
@@ -109,8 +109,8 @@ const validateContributorProfile = (profile, isUpdate = false) => {
         errors.push('Secondary skills must be an array');
       } else {
         profile.skills.secondarySkills.forEach((skill, index) => {
-          if (!skill.name) {
-            errors.push(`Secondary skill ${index + 1} must have a name`);
+          if (!skill.skillId) {
+            errors.push(`Secondary skill ${index + 1} must have a skillId`);
           }
           if (!['beginner', 'intermediate', 'advanced', 'expert'].includes(skill.level)) {
             errors.push(`Invalid skill level for secondary skill ${index + 1}`);
