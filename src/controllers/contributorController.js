@@ -310,10 +310,27 @@ exports.updateProfile = async (req, res) => {
       };
     }
     if (updated.skills) {
-      contributor.skills = {
-        ...contributor.skills,
-        ...updated.skills
-      };
+      // Properly handle skills update
+      if (updated.skills.primarySkills) {
+        contributor.skills.primarySkills = updated.skills.primarySkills.map(skill => ({
+          skillId: skill.skillId,
+          level: skill.level,
+          name: skill.name
+        }));
+      }
+      if (updated.skills.secondarySkills) {
+        contributor.skills.secondarySkills = updated.skills.secondarySkills.map(skill => ({
+          skillId: skill.skillId,
+          level: skill.level,
+          name: skill.name
+        }));
+      }
+      if (updated.skills.skillTrajectory) {
+        contributor.skills.skillTrajectory = {
+          ...contributor.skills.skillTrajectory,
+          ...updated.skills.skillTrajectory
+        };
+      }
     }
 
     console.log('Attempting to save updated contributor:', JSON.stringify(contributor, null, 2));
