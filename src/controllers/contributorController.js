@@ -219,8 +219,8 @@ exports.getProfile = async (req, res) => {
 
     // Get all skill IDs from primary and secondary skills
     const skillIds = [
-      ...contributor.skills.primarySkills.map(skill => skill.id),
-      ...contributor.skills.secondarySkills.map(skill => skill.id)
+      ...contributor.skills.primarySkills.map(skill => skill.skillId),
+      ...contributor.skills.secondarySkills.map(skill => skill.skillId)
     ];
     
     // Fetch all skills in one query
@@ -234,14 +234,14 @@ exports.getProfile = async (req, res) => {
     
     // Add skill names to the contributor object
     contributor.skills.primarySkills.forEach(skill => {
-      skill.name = skillMap[skill.id] || 'Unknown Skill';
+      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
     });
     
     contributor.skills.secondarySkills.forEach(skill => {
-      skill.name = skillMap[skill.id] || 'Unknown Skill';
+      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
     });
 
-    res.json({ message: 'Contributor profile retrieved successfully', data: contributor });
+    res.json({ message: 'Contributor profile retrieved successfully', contributor });
   } catch (error) {
     console.error('Error retrieving contributor profile:', error);
     res.status(500).json({ message: 'Error retrieving contributor profile' });
@@ -384,8 +384,8 @@ exports.getAll = async (req, res) => {
     // Get all skill IDs from all contributors
     const skillIds = new Set();
     contributors.forEach(contributor => {
-      contributor.skills.primarySkills.forEach(skill => skillIds.add(skill.id));
-      contributor.skills.secondarySkills.forEach(skill => skillIds.add(skill.id));
+      contributor.skills.primarySkills.forEach(skill => skillIds.add(skill.skillId));
+      contributor.skills.secondarySkills.forEach(skill => skillIds.add(skill.skillId));
     });
     
     // Fetch all skills in one query
@@ -400,15 +400,15 @@ exports.getAll = async (req, res) => {
     // Add skill names to each contributor object
     contributors.forEach(contributor => {
       contributor.skills.primarySkills.forEach(skill => {
-        skill.name = skillMap[skill.id] || 'Unknown Skill';
+        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
       });
       
       contributor.skills.secondarySkills.forEach(skill => {
-        skill.name = skillMap[skill.id] || 'Unknown Skill';
+        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
       });
     });
 
-    res.json({ message: 'Contributors retrieved successfully', data: contributors });
+    res.json({ message: 'Contributors retrieved successfully', contributors });
   } catch (error) {
     console.error('Error retrieving contributors:', error);
     res.status(500).json({ message: 'Error retrieving contributors' });
