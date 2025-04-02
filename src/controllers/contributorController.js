@@ -219,8 +219,8 @@ exports.getProfile = async (req, res) => {
 
     // Get all skill IDs from primary and secondary skills
     const skillIds = [
-      ...contributor.skills.primarySkills.map(skill => skill.skillId),
-      ...contributor.skills.secondarySkills.map(skill => skill.skillId)
+      ...contributor.skills.primarySkills.map(skill => skill.id),
+      ...contributor.skills.secondarySkills.map(skill => skill.id)
     ];
     
     // Fetch all skills in one query
@@ -234,11 +234,11 @@ exports.getProfile = async (req, res) => {
     
     // Add skill names to the contributor object
     contributor.skills.primarySkills.forEach(skill => {
-      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      skill.name = skillMap[skill.id] || 'Unknown Skill';
     });
     
     contributor.skills.secondarySkills.forEach(skill => {
-      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      skill.name = skillMap[skill.id] || 'Unknown Skill';
     });
 
     res.json({ message: 'Contributor profile retrieved successfully', data: contributor });
@@ -384,8 +384,8 @@ exports.getAll = async (req, res) => {
     // Get all skill IDs from all contributors
     const skillIds = new Set();
     contributors.forEach(contributor => {
-      contributor.skills.primarySkills.forEach(skill => skillIds.add(skill.skillId));
-      contributor.skills.secondarySkills.forEach(skill => skillIds.add(skill.skillId));
+      contributor.skills.primarySkills.forEach(skill => skillIds.add(skill.id));
+      contributor.skills.secondarySkills.forEach(skill => skillIds.add(skill.id));
     });
     
     // Fetch all skills in one query
@@ -400,11 +400,11 @@ exports.getAll = async (req, res) => {
     // Add skill names to each contributor object
     contributors.forEach(contributor => {
       contributor.skills.primarySkills.forEach(skill => {
-        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+        skill.name = skillMap[skill.id] || 'Unknown Skill';
       });
       
       contributor.skills.secondarySkills.forEach(skill => {
-        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+        skill.name = skillMap[skill.id] || 'Unknown Skill';
       });
     });
 
