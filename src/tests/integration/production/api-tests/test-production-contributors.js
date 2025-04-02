@@ -142,7 +142,9 @@ async function runTests() {
   // Test 1.1: Fetch Available Skills
   logger.info('Fetching available skills from the database...');
   try {
-    const skillsResponse = await prodClient.get('/skills');
+    logger.info('Making request to:', `${PROD_BASE_URL}/skill/all`);
+    const skillsResponse = await prodClient.get('/skill/all');
+    logger.info('Skills response:', skillsResponse.data);
     availableSkills = skillsResponse.data.skills || [];
     logger.info(`Found ${availableSkills.length} skills in the database`);
     
@@ -309,6 +311,20 @@ async function runTests() {
         basicInfo: {
           ...sampleContributor.basicInfo,
           bio: "Updated bio: Expert smart contract developer with focus on security",
+        },
+        skills: {
+          primarySkills: [
+            { id: "skill_001", level: "expert" },
+            { id: "skill_002", level: "expert" }
+          ],
+          secondarySkills: [
+            { id: "skill_003", level: "expert" },
+            { id: "skill_004", level: "advanced" }
+          ],
+          skillTrajectory: {
+            improvementRate: 0.95,
+            consistencyScore: 0.98
+          }
         }
       }
     };
