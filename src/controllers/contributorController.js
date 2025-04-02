@@ -217,14 +217,14 @@ exports.getProfile = async (req, res) => {
       return res.status(404).json({ message: 'Contributor not found' });
     }
 
-    // Get all skill IDs from primary and secondary skills
+    // Get all skill IDs from primary and secondary skills, filtering out any undefined or null values
     const skillIds = [
-      ...contributor.skills.primarySkills.map(skill => skill.skillId),
-      ...contributor.skills.secondarySkills.map(skill => skill.skillId)
+      ...contributor.skills.primarySkills.filter(skill => skill.skillId).map(skill => skill.skillId),
+      ...contributor.skills.secondarySkills.filter(skill => skill.skillId).map(skill => skill.skillId)
     ];
     
     // Fetch all skills in one query
-    const skills = await Skill.find({ id: { $in: skillIds } });
+    const skills = await Skill.find({ id: { $in: skillIds } }).select('id name _id');
     
     // Create a map of skill IDs to skill names
     const skillMap = {};
@@ -234,11 +234,15 @@ exports.getProfile = async (req, res) => {
     
     // Add skill names to the contributor object
     contributor.skills.primarySkills.forEach(skill => {
-      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      if (skill.skillId) {
+        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      }
     });
     
     contributor.skills.secondarySkills.forEach(skill => {
-      skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      if (skill.skillId) {
+        skill.name = skillMap[skill.skillId] || 'Unknown Skill';
+      }
     });
 
     res.json({ message: 'Contributor profile retrieved successfully', contributor });
@@ -389,7 +393,7 @@ exports.getAll = async (req, res) => {
     });
     
     // Fetch all skills in one query
-    const skills = await Skill.find({ id: { $in: Array.from(skillIds) } });
+    const skills = await Skill.find({ id: { $in: Array.from(skillIds) } }).select('id name _id');
     
     // Create a map of skill IDs to skill names
     const skillMap = {};
