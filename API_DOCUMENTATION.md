@@ -97,6 +97,39 @@ Retrieves tasks by IDs. All authenticated users can access this endpoint.
 }
 ```
 
+### Get Task By ID
+```http
+GET /api/task/:id
+```
+
+Retrieves a task by its ID. All authenticated users can access this endpoint.
+
+**Response:**
+```json
+{
+  "message": "Task retrieved successfully",
+  "task": {
+    "id": "string",
+    "title": "string",
+    "sponsorId": "string",
+    "logo": "string",
+    "description": "string",
+    "requirements": ["string"],
+    "deliverables": ["string"],
+    "deadline": "ISO date string",
+    "reward": number,
+    "postedTime": "ISO date string",
+    "status": "string",
+    "priority": "string",
+    "category": ["string"],
+    "skills": ["string"],
+    "submissions": ["string"],
+    "createdAt": "ISO date string",
+    "updatedAt": "ISO date string"
+  }
+}
+```
+
 ### Update Task
 ```http
 PUT /api/task/update
@@ -151,17 +184,10 @@ Updates an existing task. Requires sponsor authentication.
 
 ### Delete Task
 ```http
-DELETE /api/task
+DELETE /api/task/:id
 ```
 
-Deletes a task. Requires sponsor authentication.
-
-**Request Body:**
-```json
-{
-  "id": "string"
-}
-```
+Deletes a task. Requires sponsor authentication. The task ID is provided as a route parameter.
 
 **Response:**
 ```json
@@ -431,7 +457,7 @@ Registers a new contributor in the system.
 POST /api/contributor/login
 ```
 
-Logs in a contributor.
+Validates contributor credentials and returns user data. Token generation is handled by NextAuth on the frontend.
 
 **Request Body:**
 ```json
@@ -445,18 +471,10 @@ Logs in a contributor.
 {
   "message": "Login successful",
   "contributor": {
-    "_id": "string",
-    "basicInfo": {
-      "email": "string",
-      "displayName": "string",
-      "bio": "string",
-      "profileImage": "string",
-      "walletAddress": "string",
-      "website": "string",
-      "x": "string",
-      "discord": "string",
-      "telegram": "string"
-    }
+    "id": "string",
+    "displayName": "string",
+    "email": "string",
+    "role": "contributor"
   }
 }
 ```
@@ -775,7 +793,7 @@ Registers a new sponsor in the system.
 POST /api/sponsor/login
 ```
 
-Logs in a sponsor.
+Validates sponsor credentials and returns user data. Token generation is handled by NextAuth on the frontend.
 
 **Request Body:**
 ```json
@@ -789,20 +807,10 @@ Logs in a sponsor.
 {
   "message": "Login successful",
   "sponsor": {
-    "_id": "string",
-    "walletAddress": "string",
-    "verified": boolean,
+    "id": "string",
     "name": "string",
-    "logo": "string",
-    "description": "string",
-    "website": "string",
-    "x": "string",
-    "discord": "string",
-    "telegram": "string",
-    "contactEmail": "string",
-    "categories": ["string"],
-    "taskIds": ["string"],
-    "registeredAt": "ISO date string"
+    "walletAddress": "string",
+    "role": "sponsor"
   }
 }
 ```
@@ -1014,4 +1022,185 @@ Deletes a skill from the system. Requires admin authentication.
 {
   "message": "Skill deleted successfully"
 }
+```
+
+# Authentication
+
+This API uses JWT-based authentication in conjunction with NextAuth. The frontend handles authentication and token generation with NextAuth, while the backend verifies the tokens.
+
+## Permission System
+
+The API implements permission-based access control. Each endpoint requires specific permissions to access. The permissions are provided in the JWT token and verified by the backend.
+
+### Permission Types
+
+#### Contributor Permissions
+- `read:profile` - View own profile
+- `update:profile` - Update own profile
+- `delete:profile` - Delete own profile
+- `read:tasks` - View available tasks
+- `create:submission` - Submit work for a task
+- `update:submission` - Update own submissions
+- `delete:submission` - Delete own submissions
+- `read:submissions` - View submissions
+
+#### Sponsor Permissions
+- `read:profile` - View own profile
+- `update:profile` - Update own profile
+- `delete:profile` - Delete own profile
+- `create:task` - Create new tasks
+- `update:task` - Update own tasks
+- `delete:task` - Delete own tasks
+- `read:tasks` - View tasks
+- `read:submissions` - View submissions
+- `review:submission` - Review submissions for own tasks
+
+#### Admin Permissions
+- `admin:users` - Manage all users
+- `admin:tasks` - Manage all tasks
+- `admin:skills` - Manage skills
+
+### JWT Token Structure
+
+The JWT token should include:
+
+```json
+{
+  "id": "user_id",
+  "role": "contributor|sponsor|admin",
+  "permissions": ["permission1", "permission2", ...]
+}
+```
+
+## Contributor Registration
+```http
+POST /api/contributor/register
+```
+
+Registers a new contributor in the system.
+
+**Request Body:**
+```json
+{
+  "profile": {
+    "basicInfo": {
+      "email": "string",
+      "displayName": "string",
+      "bio": "string",
+      "profileImage": "string",
+      "walletAddress": "string",
+      "website": "string",
+      "x": "string",
+      "discord": "string",
+      "telegram": "string"
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Contributor registered successfully",
+  "contributor": {
+    // contributor details
+  }
+}
+```
+
+## Contributor Login
+```http
+POST /api/contributor/login
+```
+
+Validates contributor credentials and returns user data. Token generation is handled by NextAuth on the frontend.
+
+**Request Body:**
+```json
+{
+  "email": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Login successful",
+  "contributor": {
+    "id": "string",
+    "displayName": "string",
+    "email": "string",
+    "role": "contributor"
+  }
+}
+```
+
+## Sponsor Registration
+```http
+POST /api/sponsor/register
+```
+
+Registers a new sponsor in the system.
+
+**Request Body:**
+```json
+{
+  "profile": {
+    "walletAddress": "string",
+    "name": "string",
+    "logo": "string",
+    "description": "string",
+    "website": "string",
+    "x": "string",
+    "discord": "string",
+    "telegram": "string",
+    "contactEmail": "string",
+    "categories": ["string"]
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Sponsor registered successfully",
+  "sponsor": {
+    // sponsor details
+  }
+}
+```
+
+## Sponsor Login
+```http
+POST /api/sponsor/login
+```
+
+Validates sponsor credentials and returns user data. Token generation is handled by NextAuth on the frontend.
+
+**Request Body:**
+```json
+{
+  "wallet": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Login successful",
+  "sponsor": {
+    "id": "string",
+    "name": "string",
+    "walletAddress": "string",
+    "role": "sponsor"
+  }
+}
+```
+
+## Authentication Header
+
+For all protected endpoints, include the JWT token from NextAuth in the Authorization header:
+
+```http
+Authorization: Bearer YOUR_JWT_TOKEN
 ``` 

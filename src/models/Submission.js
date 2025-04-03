@@ -36,6 +36,23 @@ const submissionSchema = new mongoose.Schema({
       message: 'Wallet address must be a non-empty string'
     }
   },
+  submissionLinks: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: function(v) {
+        return Array.isArray(v) && v.every(link => {
+          try {
+            new URL(link);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        });
+      },
+      message: 'All submission links must be valid URLs'
+    }
+  },
   submissionTime: {
     type: Date,
     required: true,
@@ -68,13 +85,13 @@ const submissionSchema = new mongoose.Schema({
   },
   rating: {
     type: Number,
-    min: [0, 'Rating must be between 0 and 5'],
-    max: [5, 'Rating must be between 0 and 5'],
+    min: [0, 'Rating must be between 0 and 10'],
+    max: [10, 'Rating must be between 0 and 10'],
     validate: {
       validator: function(v) {
-        return v === null || (Number.isInteger(v) && v >= 0 && v <= 5);
+        return v === null || (Number.isInteger(v) && v >= 0 && v <= 10);
       },
-      message: 'Rating must be null or an integer between 0 and 5'
+      message: 'Rating must be null or an integer between 0 and 10'
     }
   },
   reviewTime: {
@@ -94,7 +111,7 @@ const submissionSchema = new mongoose.Schema({
       },
       message: 'Reviewer wallet address must be a non-empty string'
     }
-  }
+  },
 }, {
   timestamps: true
 });

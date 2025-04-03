@@ -240,43 +240,78 @@ exports.fetchTasks = async (req, res, next) => {
   }
 };
 
-// Delete a task
-exports.deleteTask = async (req, res, next) => {
+// Get task by ID
+exports.getTaskById = async (req, res) => {
   try {
-    const { id } = req.body;
+    const taskId = req.params.id;
+    
+    if (!taskId) {
+      return res.status(400).json({
+        message: 'Task ID is required'
+      });
+    }
 
-    // Log the deletion request
-    logger.info('Deleting task:', id);
-
-    // Find task to get sponsor ID
-    const task = await Task.findOne({ id });
+    const task = await Task.findOne({ id: taskId });
+    
     if (!task) {
-      throw new NotFoundError('Task');
+      return res.status(404).json({
+        message: 'Task not found'
+      });
     }
 
-    // Update sponsor's taskIds array to remove the task ID
-    const updatedSponsor = await Sponsor.findOneAndUpdate(
-      { walletAddress: task.sponsorId },
-      { $pull: { taskIds: id } },
-      { new: true }
-    );
+    res.json({
+      message: 'Task retrieved successfully',
+      task
+    });
+  } catch (error) {
+    console.error('Get task error:', error);
+    res.status(500).json({
+      message: 'Error retrieving task',
+      error: error.message
+    });
+  }
+};
 
-    if (!updatedSponsor) {
-      logger.error(`Sponsor ${task.sponsorId} not found`);
-      throw new NotFoundError('Sponsor');
+// Delete task
+exports.deleteTask = async (req, res) => {
+  try {
+    const taskId = req.params.id;
+    const sponsorId = req.user.id;
+    
+    if (!taskId) {
+      return res.status(400).json({
+        message: 'Task ID is required'
+      });
     }
-
-    logger.info(`Removed task ID ${id} from sponsor ${task.sponsorId}, updated taskIds:`, updatedSponsor.taskIds);
-
+    
+    // Find task by ID
+    const task = await Task.findById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        message: 'Task not found'
+      });
+    }
+    
+    // Verify task belongs to the sponsor
+    if (task.sponsorId !== sponsorId) {
+      return res.status(403).json({
+        message: 'Unauthorized - This task belongs to another sponsor'
+      });
+    }
+    
     // Delete task
-    await Task.findOneAndDelete({ id });
-
+    await Task.findByIdAndDelete(taskId);
+    
     res.json({
       message: 'Task deleted successfully'
     });
   } catch (error) {
-    logger.error('Error deleting task:', error);
-    next(error);
+    console.error('Delete task error:', error);
+    res.status(500).json({
+      message: 'Error deleting task',
+      error: error.message
+    });
   }
 };
 

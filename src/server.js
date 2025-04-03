@@ -10,7 +10,6 @@ const hpp = require('hpp');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
-const cookieParser = require('cookie-parser');
 
 // Load environment configuration
 const env = require('./config/environment');
@@ -74,9 +73,6 @@ app.use(xss());
 // Prevent parameter pollution
 app.use(hpp());
 
-// Enable cookie parsing
-app.use(cookieParser());
-
 // Rate limiting configuration
 const createRateLimiter = (windowMs, max, message) => {
   return rateLimit({
@@ -112,16 +108,6 @@ const apiLimiter = createRateLimiter(
 // Apply rate limiting to specific routes
 app.use('/api/contributor/login', authLimiter);
 app.use('/api/sponsor/login', authLimiter);
-
-// Apply auth middleware to protected API routes only
-app.use('/api/contributor/profile', auth);
-app.use('/api/contributor/update', auth);
-app.use('/api/contributor/delete', auth);
-app.use('/api/sponsor/profile', auth);
-app.use('/api/sponsor/update', auth);
-app.use('/api/sponsor/delete', auth);
-app.use('/api/task', auth);
-app.use('/api/submission', auth);
 
 // Compression middleware
 app.use(compression());
@@ -183,14 +169,17 @@ app.get('/api/protected', auth, (req, res) => {
   res.json({ message: 'This is a protected route' });
 });
 
-// Role-based route example
-app.get('/api/admin', auth, authorize('admin'), (req, res) => {
-  res.json({ message: 'This is an admin-only route' });
+// Role and permission examples
+app.get('/api/contributor-example', auth, hasPermission('read:profile'), (req, res) => {
+  res.json({ message: 'This route requires read:profile permission' });
 });
 
-// Permission-based route example
-app.get('/api/tasks', auth, hasPermission('read:tasks'), (req, res) => {
-  res.json({ message: 'This is a tasks route requiring read permission' });
+app.get('/api/sponsor-example', auth, hasPermission('create:task'), (req, res) => {
+  res.json({ message: 'This route requires create:task permission' });
+});
+
+app.get('/api/admin-example', auth, hasPermission('admin:users'), (req, res) => {
+  res.json({ message: 'This route requires admin:users permission' });
 });
 
 // 404 handler

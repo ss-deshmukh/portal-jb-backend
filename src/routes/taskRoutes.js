@@ -2,21 +2,24 @@ const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
 const { taskValidation } = require('../middleware/validation');
-const { auth, authorize } = require('../middleware/auth');
+const { auth, authorize, hasPermission } = require('../middleware/auth');
 
-// Apply auth middleware to all routes
+// Apply auth middleware to all task routes
 router.use(auth);
 
 // Create a new task (sponsors only)
-router.post('/create', authorize('sponsor'), taskValidation, taskController.createTask);
+router.post('/create', hasPermission('create:task'), taskValidation, taskController.createTask);
 
-// Fetch tasks by IDs (all authenticated users)
-router.post('/fetch', taskController.fetchTasks);
+// Get task by ID (both sponsors and contributors)
+router.get('/:id', hasPermission('read:tasks'), taskController.getTaskById);
+
+// Fetch tasks by various criteria (all authenticated users)
+router.post('/fetch', hasPermission('read:tasks'), taskController.fetchTasks);
 
 // Update a task (sponsors only)
-router.put('/update', authorize('sponsor'), taskValidation, taskController.updateTask);
+router.put('/update', hasPermission('update:task'), taskValidation, taskController.updateTask);
 
 // Delete a task (sponsors only)
-router.delete('/', authorize('sponsor'), taskController.deleteTask);
+router.delete('/:id', hasPermission('delete:task'), taskController.deleteTask);
 
 module.exports = router; 

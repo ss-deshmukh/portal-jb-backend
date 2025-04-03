@@ -4,7 +4,7 @@ const sponsorSchema = new mongoose.Schema({
   walletAddress: { type: String, required: true, unique: true },
   verified: { type: Boolean, default: false },
   name: { type: String, required: true },
-  logo: { type: String, required: true },
+  logo: { type: String, required: false },
   description: { type: String, required: true },
   website: { type: String, default: '' },
   x: { type: String, default: '' },

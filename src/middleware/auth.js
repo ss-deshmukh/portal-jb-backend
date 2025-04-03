@@ -1,61 +1,72 @@
 /**
  * Authentication Middleware
  * 
- * Verifies Auth.js (NextAuth.js) session cookies and Bearer tokens using the shared AUTH_SECRET.
- * Extracts user information from the session/token and adds it to the request object.
+ * Verifies JWT tokens from NextAuth in the Bearer Authorization header using AUTH_SECRET.
+ * Extracts user role and information from the JWT and adds it to the request object.
  */
 
 const jwt = require('jsonwebtoken');
 const logger = require('../utils/logger');
 
-// Get AUTH_SECRET from environment variables
+// Get AUTH_SECRET from environment variables - must match NextAuth secret
 const AUTH_SECRET = process.env.AUTH_SECRET;
 if (!AUTH_SECRET) {
   throw new Error('AUTH_SECRET environment variable is required');
 }
 
+/**
+ * Authentication middleware
+ * Verifies JWT token from Authorization header
+ */
 const auth = async (req, res, next) => {
   try {
-    let session;
-
-    // First try to get Bearer token from Authorization header
+    // Get token from Authorization header
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      session = jwt.verify(token, AUTH_SECRET);
-    } else {
-      // If no Bearer token, try to get session cookie
-      const sessionCookie = req.cookies['next-auth.session-token'];
-      if (!sessionCookie) {
-        return res.status(401).json({ message: 'No authentication token found' });
-      }
-      session = jwt.verify(sessionCookie, AUTH_SECRET);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No authentication token found' });
     }
     
-    // Verify session is valid and not expired
-    if (!session || !session.user) {
-      return res.status(401).json({ message: 'Invalid session' });
+    const token = authHeader.substring(7);
+    
+    // Verify token from NextAuth
+    const decoded = jwt.verify(token, AUTH_SECRET);
+    
+    // Extract user info from NextAuth JWT format
+    // NextAuth typically includes a 'sub' field for user ID
+    // and may nest user data in different structures
+    let userId, role, permissions;
+    
+    if (decoded.sub) {
+      // Standard NextAuth format
+      userId = decoded.sub;
+      // Role and permissions might be in different locations depending on your NextAuth config
+      role = decoded.role || (decoded.user && decoded.user.role) || 'user';
+      permissions = decoded.permissions || (decoded.user && decoded.user.permissions) || [];
+    } else if (decoded.id) {
+      // Our custom format
+      userId = decoded.id;
+      role = decoded.role || 'user';
+      permissions = decoded.permissions || [];
+    } else {
+      return res.status(401).json({ message: 'Invalid token format: missing user identifier' });
     }
 
-    // Add the user info to the request object
+    // Add user info to request object
     req.user = {
-      id: session.user.id,
-      email: session.user.email,
-      role: session.user.role || 'user',
-      permissions: session.user.permissions || []
+      id: userId,
+      role: role,
+      permissions: permissions
     };
 
-    // For debugging during development
     logger.debug('Authenticated user:', {
-      userId: session.user.id,
-      email: session.user.email,
-      role: session.user.role
+      userId: userId,
+      role: role
     });
 
     next();
   } catch (error) {
     logger.error('Auth error:', error);
-    return res.status(401).json({ message: 'Invalid or expired session' });
+    return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
 
