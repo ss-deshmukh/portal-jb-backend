@@ -56,31 +56,29 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Create session
-    const session = {
-      user: {
-        id: sponsor._id.toString(),
-        walletAddress: sponsor.walletAddress,
-        role: 'sponsor',
-        permissions: ['read:profile', 'update:profile']
-      },
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
-    };
+    // Define sponsor permissions
+    const permissions = [
+      'read:profile',
+      'update:profile',
+      'delete:profile',
+      'create:task',
+      'update:task',
+      'delete:task',
+      'read:tasks',
+      'read:submissions',
+      'review:submission',
+      'grade:submission'
+    ];
 
-    // Create session cookie
-    const sessionCookie = jwt.sign(session, process.env.AUTH_SECRET);
-
-    // Set cookie in response
-    res.cookie('next-auth.session-token', sessionCookie, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    });
-
+    // Since NextAuth handles token generation, we just return the sponsor data
     res.json({
       message: 'Login successful',
-      sponsor
+      sponsor: {
+        id: sponsor.walletAddress,
+        displayName: sponsor.name,
+        role: 'sponsor',
+        permissions: permissions
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -95,7 +93,7 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     // Find sponsor by ID from auth middleware
-    const sponsor = await Sponsor.findById(req.user.id);
+    const sponsor = await Sponsor.findOne({ walletAddress: req.user.id });
     if (!sponsor) {
       return res.status(404).json({
         message: 'Sponsor not found'
@@ -120,22 +118,28 @@ exports.updateProfile = async (req, res) => {
   try {
     const { updated } = req.body;
 
-    // Find sponsor by ID from auth middleware
-    const sponsor = await Sponsor.findById(req.user.id);
+    // Prevent updating registeredAt
+    if (updated.registeredAt) {
+      delete updated.registeredAt;
+    }
+
+    console.log("Updated info received: ", updated);
+    // Find and update sponsor by ID from auth middleware
+    const sponsor = await Sponsor.findOneAndUpdate(
+      { walletAddress: req.user.id },
+      { $set: updated },
+      { 
+        new: true, 
+        runValidators: true,
+        context: 'query' // This tells Mongoose to only validate the updated fields
+      }
+    );
+
     if (!sponsor) {
       return res.status(404).json({
         message: 'Sponsor not found'
       });
     }
-
-    // Update fields
-    Object.keys(updated).forEach(key => {
-      if (key !== 'registeredAt') {
-        sponsor[key] = updated[key];
-      }
-    });
-
-    await sponsor.save();
 
     res.json({
       message: 'Profile updated successfully',
@@ -154,7 +158,7 @@ exports.updateProfile = async (req, res) => {
 exports.deleteProfile = async (req, res) => {
   try {
     // Find and delete sponsor by ID from auth middleware
-    const sponsor = await Sponsor.findByIdAndDelete(req.user.id);
+    const sponsor = await Sponsor.findOneAndDelete({ walletAddress: req.user.id });
     if (!sponsor) {
       return res.status(404).json({
         message: 'Sponsor not found'

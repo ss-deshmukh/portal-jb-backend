@@ -173,31 +173,27 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Create session
-    const session = {
-      user: {
-        id: contributor._id,
-        email: contributor.basicInfo.email,
-        role: 'contributor',
-        permissions: ['read:profile', 'update:profile']
-      },
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
-    };
+    // Define contributor permissions
+    const permissions = [
+      'read:profile',
+      'update:profile',
+      'delete:profile',
+      'read:tasks',
+      'create:submission',
+      'update:submission', 
+      'delete:submission',
+      'read:submissions'
+    ];
 
-    // Create session cookie
-    const sessionCookie = jwt.sign(session, AUTH_SECRET);
-
-    // Set cookie in response
-    res.cookie('next-auth.session-token', sessionCookie, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    });
-
+    // Since NextAuth handles token generation, we just return the contributor data
     res.json({
       message: 'Login successful',
-      contributor
+      contributor: {
+        id: contributor.basicInfo.email,
+        displayName: contributor.basicInfo.displayName,
+        role: 'contributor',
+        permissions: permissions
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -212,14 +208,9 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const contributorId = req.user.id;
-    if (!contributorId) {
-      return res.status(401).json({
-        message: 'No token provided'
-      });
-    }
 
     // Find contributor by ID
-    const contributor = await Contributor.findById(contributorId);
+    const contributor = await Contributor.findOne({ 'basicInfo.email': contributorId });
     if (!contributor) {
       return res.status(404).json({
         message: 'Contributor not found'
@@ -243,7 +234,7 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const contributorId = req.user.id;
-    const { email, updated } = req.body;
+    const { updated } = req.body;
 
     if (!contributorId) {
       return res.status(401).json({
@@ -251,18 +242,11 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    // Find contributor by ID
-    const contributor = await Contributor.findById(contributorId);
+    // Find contributor by email
+    const contributor = await Contributor.findOne({ 'basicInfo.email': contributorId });
     if (!contributor) {
       return res.status(404).json({
         message: 'Contributor not found'
-      });
-    }
-
-    // Validate email if provided
-    if (email && email !== contributor.basicInfo.email) {
-      return res.status(400).json({
-        message: 'Email mismatch'
       });
     }
 
@@ -301,6 +285,24 @@ exports.updateProfile = async (req, res) => {
         ...contributor.skills,
         ...updated.skills
       };
+    }
+
+    if (updated.reputation) {
+      contributor.reputation = {
+        ...contributor.reputation,
+        ...updated.reputation
+      };
+    }
+
+    if (updated.contributionStats) {
+      contributor.contributionStats = {
+        ...contributor.contributionStats,
+        ...updated.contributionStats
+      };
+    }
+
+    if (updated.taskIds) {
+      contributor.taskIds = updated.taskIds;
     }
 
     console.log('Attempting to save updated contributor:', JSON.stringify(contributor, null, 2));

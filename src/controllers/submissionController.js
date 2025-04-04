@@ -85,6 +85,7 @@ exports.createSubmission = async (req, res, next) => {
     }
 
     // Check if contributor already has a submission for this task
+    console.log('Validated submission:', validatedSubmission);
     const existingSubmission = await Submission.findOne({
       taskId: validatedSubmission.taskId,
       walletAddress: validatedSubmission.walletAddress
@@ -350,4 +351,62 @@ exports.fetchSubmissions = async (req, res, next) => {
     logger.error('Error fetching submissions:', error);
     next(error);
   }
-}; 
+};
+
+// Grade a submission
+exports.gradeSubmission = async (req, res, next) => {
+  try {
+    const { submissionId, rating } = req.body;
+
+    // Log the grading request
+    logger.info('Grading submission:', {
+      submissionId,
+      rating
+    });
+
+    // Find the submission
+    const submission = await Submission.findOne({ id: submissionId });
+    if (!submission) {
+      throw new NotFoundError('Submission not found');
+    }
+
+    // Validate rating
+    if (rating !== undefined && rating !== null) {
+      if (typeof rating !== 'number' || rating < 0 || rating > 10) {
+        throw new ValidationError('Rating must be a number between 0 and 10');
+      }
+    }
+
+    // Check if the submission is in pending status
+    if (submission.status !== 'pending') {
+      throw new ValidationError('Submission is not in pending status');
+    }
+
+    // Update submission
+    const updateData = {
+      rating,
+      status: rating != 0 ? 'accepted' : 'rejected',
+      isAccepted: rating != 0
+    };
+
+    const updatedSubmission = await Submission.findOneAndUpdate(
+      { id: submissionId },
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    logger.info('Submission graded successfully:', {
+      submissionId,
+      updatedSubmission
+    });
+
+    res.json({
+      message: 'Submission graded successfully',
+      submission: updatedSubmission
+    });
+  } catch (error) {
+    logger.error('Error grading submission:', error);
+    next(error);
+  }
+};
+

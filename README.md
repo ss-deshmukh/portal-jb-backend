@@ -86,6 +86,63 @@ The API uses a consistent error handling pattern:
 }
 ```
 
+## Authentication
+
+The Portal JB Backend uses JWT (JSON Web Token) based authentication with NextAuth:
+
+1. **Authentication Flow**:
+   - Authentication and token generation are handled by NextAuth on the frontend
+   - The backend only verifies JWT tokens sent in requests
+   - The frontend includes the JWT token in the `Authorization: Bearer <token>` header for authenticated requests
+
+2. **Token Verification**:
+   - JWTs are verified using the same AUTH_SECRET that NextAuth uses to sign them
+   - The backend extracts user ID, role (contributor or sponsor), and permissions from the token
+   - No session state is maintained on the backend
+
+3. **Permission-Based Access Control**:
+   - Routes are protected based on specific permissions rather than just roles
+   - Each user role comes with a set of permissions:
+     
+     **Contributor Permissions**:
+     - `read:profile` - View own profile
+     - `update:profile` - Update own profile
+     - `delete:profile` - Delete own profile
+     - `read:tasks` - View available tasks
+     - `create:submission` - Submit work for a task
+     - `update:submission` - Update own submissions
+     - `delete:submission` - Delete own submissions
+     - `read:submissions` - View submissions
+     
+     **Sponsor Permissions**:
+     - `read:profile` - View own profile
+     - `update:profile` - Update own profile
+     - `delete:profile` - Delete own profile
+     - `create:task` - Create new tasks
+     - `update:task` - Update own tasks
+     - `delete:task` - Delete own tasks
+     - `read:tasks` - View tasks
+     - `read:submissions` - View submissions
+     - `review:submission` - Review submissions for own tasks
+     
+     **Admin Permissions**:
+     - `admin:users` - Manage all users
+     - `admin:tasks` - Manage all tasks
+     - `admin:skills` - Manage skills
+   
+4. **Required Environment Variables**:
+   ```env
+   AUTH_SECRET=same_secret_used_by_nextauth_for_token_signing
+   ```
+
+5. **Example Request with JWT**:
+   ```javascript
+   // Using token from NextAuth for authenticated requests
+   fetch('/api/protected', {
+     headers: { 'Authorization': `Bearer ${session.token}` }
+   });
+   ```
+
 ## Contributing
 
 1. Fork the repository

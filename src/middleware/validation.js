@@ -134,9 +134,6 @@ const validateSponsorProfile = (profile, isUpdate = false) => {
     if (!profile.name) {
       errors.push('Sponsor name is required');
     }
-    if (!profile.logo) {
-      errors.push('Sponsor logo is required');
-    }
     if (!profile.description) {
       errors.push('Sponsor description is required');
     }
@@ -276,6 +273,7 @@ const validateSubmission = (submission) => {
     submission,
     hasTaskId: !!submission.taskId,
     hasWalletAddress: !!submission.walletAddress,
+    hasSubmissionLinks: !!submission.submissionLinks,
     hasSubmissionTime: !!submission.submissionTime,
     hasStatus: !!submission.status,
     hasIsAccepted: submission.isAccepted !== undefined,
@@ -291,6 +289,15 @@ const validateSubmission = (submission) => {
   }
   if (!submission.walletAddress || !validateWalletAddress(submission.walletAddress)) {
     errors.push('Valid wallet address is required');
+  }
+  if (!submission.submissionLinks || !Array.isArray(submission.submissionLinks) || submission.submissionLinks.length === 0) {
+    errors.push('Submission links are required and must be an array with at least one link');
+  } else {
+    submission.submissionLinks.forEach(link => {
+      if (typeof link !== 'string' || !link.trim()) {
+        errors.push('All submission links must be valid URLs');
+      }
+    });
   }
   if (!submission.submissionTime) {
     errors.push('Submission time is required');
@@ -339,7 +346,8 @@ const contributorValidation = (req, res, next) => {
   // Handle update case where data is nested under 'updated'
   if (data.updated) {
     // For updates, we need to validate both the email in the root and the updated data
-    if (!data.email || !validateEmail(data.email)) {
+    if (!data.updated.basicInfo.email || !validateEmail(data.updated.basicInfo.email)) {
+      console.log('Invalid email format:', data.updated.basicInfo.email);
       return res.status(400).json({
         message: 'Validation failed',
         errors: ['Invalid email format']
