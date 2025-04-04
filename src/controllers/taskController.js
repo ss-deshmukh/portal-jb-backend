@@ -284,10 +284,13 @@ exports.deleteTask = async (req, res) => {
       });
     }
     
-    // Find task by ID
-    const task = await Task.findById(taskId);
+    logger.info('Attempting to delete task:', { taskId, sponsorId });
+    
+    // Find task by custom ID
+    const task = await Task.findOne({ id: taskId });
     
     if (!task) {
+      logger.warn('Task not found for deletion:', { taskId });
       return res.status(404).json({
         message: 'Task not found'
       });
@@ -295,19 +298,34 @@ exports.deleteTask = async (req, res) => {
     
     // Verify task belongs to the sponsor
     if (task.sponsorId !== sponsorId) {
+      logger.warn('Unauthorized deletion attempt:', { taskId, sponsorId, taskSponsorId: task.sponsorId });
       return res.status(403).json({
         message: 'Unauthorized - This task belongs to another sponsor'
       });
     }
     
-    // Delete task
-    await Task.findByIdAndDelete(taskId);
+    // Delete task using custom ID field
+    const result = await Task.findOneAndDelete({ id: taskId });
     
+    if (!result) {
+      logger.error('Failed to delete task:', { taskId });
+      return res.status(404).json({
+        message: 'Task not found'
+      });
+    }
+    
+    // Update sponsor's taskIds array
+    await Sponsor.findOneAndUpdate(
+      { walletAddress: sponsorId },
+      { $pull: { taskIds: taskId } }
+    );
+    
+    logger.info('Task deleted successfully:', { taskId });
     res.json({
       message: 'Task deleted successfully'
     });
   } catch (error) {
-    console.error('Delete task error:', error);
+    logger.error('Delete task error:', { error: error.message, stack: error.stack });
     res.status(500).json({
       message: 'Error deleting task',
       error: error.message
