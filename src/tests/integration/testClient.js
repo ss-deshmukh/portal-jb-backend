@@ -389,7 +389,7 @@ const api = {
       }
     },
     delete: async (id) => {
-      logger.info(`DELETE /api/task`);
+      logger.info(`DELETE /api/task/${id}`);
       try {
         // Get the current session token
         const token = testClient.defaults.headers.Cookie?.split('=')[1];
@@ -397,9 +397,8 @@ const api = {
           throw new Error('No authentication token available');
         }
 
-        const response = await testClient.delete('/task', {
-          headers: { Authorization: `Bearer ${token}` },
-          data: { id }
+        const response = await testClient.delete(`/task/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
         return response;
       } catch (error) {

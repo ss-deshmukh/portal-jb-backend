@@ -1,8 +1,11 @@
 const Task = require('../models/Task');
 const Sponsor = require('../models/Sponsor');
+const Submission = require('../models/Submission');
+const Contributor = require('../models/Contributor');
 const crypto = require('crypto');
 const { NotFoundError, ValidationError } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
+const mongoose = require('mongoose');
 
 // Get the task schema
 const taskSchema = Task.schema;
@@ -303,27 +306,58 @@ exports.deleteTask = async (req, res) => {
         message: 'Unauthorized - This task belongs to another sponsor'
       });
     }
-    
-    // Delete task using custom ID field
-    const result = await Task.findOneAndDelete({ id: taskId });
-    
-    if (!result) {
-      logger.error('Failed to delete task:', { taskId });
-      return res.status(404).json({
-        message: 'Task not found'
+
+    // Check if task has any submissions
+    const submissionCount = await Submission.countDocuments({ taskId });
+    if (submissionCount > 0) {
+      logger.warn('Cannot delete task with submissions:', { taskId, submissionCount });
+      return res.status(400).json({
+        message: 'Cannot delete task with existing submissions',
+        details: {
+          taskId,
+          submissionCount
+        }
       });
     }
-    
-    // Update sponsor's taskIds array
-    await Sponsor.findOneAndUpdate(
-      { walletAddress: sponsorId },
-      { $pull: { taskIds: taskId } }
-    );
-    
-    logger.info('Task deleted successfully:', { taskId });
-    res.json({
-      message: 'Task deleted successfully'
-    });
+
+    // Start a transaction to ensure all operations succeed or none do
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Delete task using custom ID field
+      const result = await Task.findOneAndDelete({ id: taskId }).session(session);
+      
+      if (!result) {
+        logger.error('Failed to delete task:', { taskId });
+        throw new NotFoundError('Task');
+      }
+      
+      // Update sponsor's taskIds array
+      await Sponsor.findOneAndUpdate(
+        { walletAddress: sponsorId },
+        { $pull: { taskIds: taskId } }
+      ).session(session);
+      
+      // Commit the transaction
+      await session.commitTransaction();
+      
+      logger.info('Task deleted successfully:', { taskId });
+      
+      res.json({
+        message: 'Task deleted successfully',
+        details: {
+          taskId
+        }
+      });
+    } catch (error) {
+      // If an error occurred, abort the transaction
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      // End the session
+      session.endSession();
+    }
   } catch (error) {
     logger.error('Delete task error:', { error: error.message, stack: error.stack });
     res.status(500).json({

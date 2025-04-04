@@ -1,5 +1,10 @@
 const axios = require('axios');
 const winston = require('winston');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+
+// Load environment variables from .env.test
+dotenv.config({ path: '.env.test' });
 
 // Configure logger
 const logger = winston.createLogger({
@@ -22,6 +27,34 @@ const axiosClient = axios.create({
     'Content-Type': 'application/json'
   }
 });
+
+// Generate JWT token for testing
+const generateAuthToken = (user) => {
+  const AUTH_SECRET = process.env.AUTH_SECRET;
+  if (!AUTH_SECRET) {
+    throw new Error('AUTH_SECRET environment variable is required');
+  }
+  return jwt.sign(user, AUTH_SECRET, { expiresIn: '1h' });
+};
+
+// Helper to create a mock Auth.js session cookie
+const createMockSessionCookie = (userData) => {
+  const session = {
+    user: {
+      id: userData.id || 'test-user-id',
+      role: userData.role || 'user',
+      permissions: userData.permissions || []
+    },
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+  };
+
+  const AUTH_SECRET = process.env.AUTH_SECRET;
+  if (!AUTH_SECRET) {
+    throw new Error('AUTH_SECRET environment variable is required');
+  }
+
+  return jwt.sign(session, AUTH_SECRET);
+};
 
 // Sample data
 const sampleSponsor = {
@@ -57,12 +90,14 @@ const sampleTask = {
 };
 
 const sampleSubmission = {
-  taskId: '', // Will be set after task creation
-  walletAddress: '0x1111111111111111111111111111111111111111',
-  submissionTime: new Date().toISOString(),
-  status: 'pending',
-  isAccepted: false,
-  submissions: ['https://github.com/test/repo', 'https://example.com/demo']
+  submission: {
+    taskId: '', // Will be set after task creation
+    walletAddress: '0x1111111111111111111111111111111111111111',
+    submissionLinks: ["https://github.com/test/repo", "https://example.com/demo"],
+    submissionTime: new Date().toISOString(),
+    status: 'pending',
+    isAccepted: false
+  }
 };
 
 const sampleSubmission2 = {
@@ -158,30 +193,24 @@ async function runTests() {
       status: loginResponse.status
     });
 
-    // Extract session token from Set-Cookie header
-    const setCookieHeader = loginResponse.headers['set-cookie'];
-    if (!setCookieHeader) {
-      throw new Error('No Set-Cookie header found in login response');
-    }
+    // Generate auth token for the sponsor
+    const sponsorToken = generateAuthToken({
+      id: sampleSponsor.profile.walletAddress,
+      role: 'sponsor',
+      permissions: ['read:profile', 'update:profile', 'delete:profile', 'create:task', 'update:task', 'delete:task', 'read:tasks', 'read:submissions', 'review:submission', 'grade:submission']
+    });
 
-    const sessionTokenCookie = setCookieHeader.find(cookie => cookie.startsWith('next-auth.session-token='));
-    if (!sessionTokenCookie) {
-      throw new Error('No session token cookie found in Set-Cookie header');
-    }
-
-    // Set the cookie for subsequent requests
-    axiosClient.defaults.headers.Cookie = sessionTokenCookie;
+    // Set auth header for subsequent requests
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
 
     // Create Task
     logger.info('Running Create Task Test...');
     logger.info('Task payload:', { task: sampleTask });
-    const createTaskResponse = await axiosClient.post('/task/create', {
-      task: sampleTask
-    });
+    const createTaskResponse = await axiosClient.post('/task/create', { task: sampleTask });
     logger.info('Create Task Response:', {
-      status: createTaskResponse.status,
       data: createTaskResponse.data,
-      headers: createTaskResponse.headers
+      headers: createTaskResponse.headers,
+      status: createTaskResponse.status
     });
     
     if (!createTaskResponse.data.task || !createTaskResponse.data.task.id) {
@@ -189,60 +218,119 @@ async function runTests() {
     }
     
     const taskId = createTaskResponse.data.task.id;
-    sampleSubmission.taskId = taskId;
-    sampleSubmission2.taskId = taskId;  // Set taskId for second submission
-    logger.info('Set submission taskId to:', sampleSubmission.taskId);
+    logger.info('Set submission taskId to:', taskId);
 
-    // Verify initial state
+    // Set taskId in submission payload
+    sampleSubmission.submission.taskId = taskId;
+
+    // Verify task submissions
     await verifyTaskSubmissions(taskId, []);
-    await verifyContributorTaskIds(sampleSubmission.walletAddress, []);
+
+    // Verify contributor taskIds
+    await verifyContributorTaskIds(sampleSubmission.submission.walletAddress, []);
     await verifyContributorTaskIds(sampleSubmission2.walletAddress, []);
 
     // Create First Submission
     logger.info('Running Create First Submission Test...');
-    logger.info('Submission payload:', { submission: sampleSubmission });
-    const createFirstSubmissionResponse = await axiosClient.post('/submission', {
-      submission: sampleSubmission
+
+    // Generate contributor token
+    const contributorToken = generateAuthToken({
+      id: sampleSubmission.submission.walletAddress,
+      role: 'contributor',
+      permissions: ['create:submission', 'read:submission', 'update:submission', 'delete:submission']
     });
-    logger.info('Create First Submission Response:', createFirstSubmissionResponse.data);
-    const firstSubmissionId = createFirstSubmissionResponse.data.submission.id;
+
+    // Set contributor token in axios client
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${contributorToken}`;
+
+    logger.info('Submission payload:', sampleSubmission);
+
+    const response = await axiosClient.post('/submission', sampleSubmission);
+    logger.info('Create First Submission Response:', response.data);
+    const firstSubmissionId = response.data.submission.id;
+
+    // Switch back to sponsor token for verification
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
 
     // Verify task submissions and contributor taskIds after first submission
     await verifyTaskSubmissions(taskId, [firstSubmissionId]);
-    await verifyContributorTaskIds(sampleSubmission.walletAddress, [taskId]);
+    await verifyContributorTaskIds(sampleSubmission.submission.walletAddress, [taskId]);
     await verifyContributorTaskIds(sampleSubmission2.walletAddress, []);
 
     // Create Second Submission
     logger.info('Running Create Second Submission Test...');
+
+    // Generate contributor token for second submission
+    const contributorToken2 = generateAuthToken({
+      id: sampleSubmission2.walletAddress,
+      role: 'contributor',
+      permissions: ['create:submission', 'read:submission', 'update:submission', 'delete:submission']
+    });
+
+    // Set contributor token in axios client
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${contributorToken2}`;
+
     const createSecondSubmissionResponse = await axiosClient.post('/submission', {
-      submission: sampleSubmission2
+      submission: {
+        taskId: taskId,
+        walletAddress: sampleSubmission2.walletAddress,
+        submissionLinks: sampleSubmission2.submissions,
+        submissionTime: sampleSubmission2.submissionTime,
+        status: sampleSubmission2.status,
+        isAccepted: sampleSubmission2.isAccepted
+      }
     });
     logger.info('Create Second Submission Response:', createSecondSubmissionResponse.data);
     const secondSubmissionId = createSecondSubmissionResponse.data.submission.id;
 
+    // Switch back to sponsor token for verification
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
+
     // Verify task submissions and contributor taskIds after second submission
     await verifyTaskSubmissions(taskId, [firstSubmissionId, secondSubmissionId]);
-    await verifyContributorTaskIds(sampleSubmission.walletAddress, [taskId]);
+    await verifyContributorTaskIds(sampleSubmission.submission.walletAddress, [taskId]);
     await verifyContributorTaskIds(sampleSubmission2.walletAddress, [taskId]);
 
     // Get All Submissions
     logger.info('Running Get All Submissions Test...');
     const getAllSubmissionsResponse = await axiosClient.get('/submission', {
-      params: { taskId: sampleSubmission.taskId }
+      params: { taskId: sampleSubmission.submission.taskId }
     });
     logger.info('Get All Submissions Response:', getAllSubmissionsResponse.data);
 
-    // Delete First Submission
+    // Switch to contributor token for deletion
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${contributorToken}`;
+
+    // Delete first submission
     logger.info('Running Delete First Submission Test...');
-    const deleteFirstSubmissionResponse = await axiosClient.delete('/submission', {
-      data: { submissionId: firstSubmissionId }
-    });
-    logger.info('Delete First Submission Response:', deleteFirstSubmissionResponse.data);
+    try {
+      const deleteResponse = await axiosClient.delete('/submission', {
+        data: { submissionId: firstSubmissionId }
+      });
+      logger.info('Delete First Submission Response:', {
+        status: deleteResponse.status,
+        data: deleteResponse.data
+      });
+    } catch (error) {
+      logger.error('Test execution failed:', {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      throw error;
+    }
+
+    // Switch back to sponsor token for verification
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
 
     // Verify task submissions and contributor taskIds after first submission deletion
     await verifyTaskSubmissions(taskId, [secondSubmissionId]);
-    await verifyContributorTaskIds(sampleSubmission.walletAddress, []);
+    await verifyContributorTaskIds(sampleSubmission.submission.walletAddress, []);
     await verifyContributorTaskIds(sampleSubmission2.walletAddress, [taskId]);
+
+    // Switch to second contributor token for deletion
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${contributorToken2}`;
 
     // Delete Second Submission
     logger.info('Running Delete Second Submission Test...');
@@ -251,17 +339,31 @@ async function runTests() {
     });
     logger.info('Delete Second Submission Response:', deleteSecondSubmissionResponse.data);
 
+    // Switch back to sponsor token for verification
+    axiosClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
+
     // Verify task submissions and contributor taskIds after second submission deletion
     await verifyTaskSubmissions(taskId, []);
-    await verifyContributorTaskIds(sampleSubmission.walletAddress, []);
+    await verifyContributorTaskIds(sampleSubmission.submission.walletAddress, []);
     await verifyContributorTaskIds(sampleSubmission2.walletAddress, []);
 
     // Delete Task
     logger.info('Running Delete Task Test...');
-    const deleteTaskResponse = await axiosClient.delete('/task', {
-      data: { id: taskId }
-    });
-    logger.info('Delete Task Response:', deleteTaskResponse.data);
+    try {
+      const deleteTaskResponse = await axiosClient.delete(`/task/${taskId}`);
+      logger.info('Delete Task Response:', {
+        status: deleteTaskResponse.status,
+        data: deleteTaskResponse.data
+      });
+    } catch (error) {
+      logger.error('Test execution failed:', {
+        error: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      throw error;
+    }
 
     logger.info('All tests completed successfully');
   } catch (error) {

@@ -1,5 +1,10 @@
 const axios = require('axios');
 const winston = require('winston');
+const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
+
+// Load environment variables from .env.test
+dotenv.config({ path: '.env.test' });
 
 // Create a test logger
 const logger = winston.createLogger({
@@ -17,26 +22,12 @@ const prodClient = axios.create({
   baseURL: PROD_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
-  },
-  withCredentials: true // Enable cookie handling
+  }
 });
 
-// Add response interceptor for better error logging and cookie handling
+// Add response interceptor for better error logging
 prodClient.interceptors.response.use(
-  response => {
-    // Extract and store session cookie if present
-    const cookies = response.headers['set-cookie'];
-    if (cookies) {
-      const sessionCookie = cookies.find(cookie => cookie.startsWith('next-auth.session-token='));
-      if (sessionCookie) {
-        const token = sessionCookie.split(';')[0].split('=')[1];
-        // Set the cookie for subsequent requests
-        prodClient.defaults.headers.common['Cookie'] = `next-auth.session-token=${token}`;
-        logger.info('Session cookie set successfully');
-      }
-    }
-    return response;
-  },
+  response => response,
   error => {
     if (error.response) {
       logger.error('API Error:', {
@@ -58,6 +49,12 @@ prodClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Generate JWT token for testing
+const generateAuthToken = (user) => {
+  const AUTH_SECRET = process.env.AUTH_SECRET || 'development_auth_secret';
+  return jwt.sign(user, AUTH_SECRET, { expiresIn: '1h' });
+};
 
 // Sample test data (from sample-data/sponsors.json)
 const sampleSponsor = {
@@ -134,12 +131,17 @@ async function runTests() {
     });
     logger.info('Login successful:', loginResponse.data);
 
-    // Extract session cookie from response headers
-    const cookies = loginResponse.headers['set-cookie'];
-    if (!cookies) {
-      logger.error('No session cookie received from login');
-      return;
-    }
+    // Generate JWT token
+    const user = {
+      id: loginResponse.data.sponsor.id,
+      role: loginResponse.data.sponsor.role,
+      permissions: loginResponse.data.sponsor.permissions
+    };
+    authToken = generateAuthToken(user);
+    logger.info('Generated JWT token for authenticated requests');
+
+    // Set the token for subsequent requests
+    prodClient.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
   } catch (error) {
     logger.error('Login failed:', error.message);
     if (error.response) {
@@ -155,7 +157,7 @@ async function runTests() {
   // Test 4: Get Sponsor Profile
   logger.info('Testing get sponsor profile...');
   try {
-    const profileResponse = await prodClient.get('/sponsor');
+    const profileResponse = await prodClient.get('/sponsor/profile');
     logger.info('Profile retrieved successfully:', profileResponse.data);
   } catch (error) {
     logger.error('Get profile failed:', error.message);
@@ -171,7 +173,7 @@ async function runTests() {
         categories: ["Smart Contracts", "Layer 2", "Research", "Innovation"]
       }
     };
-    const updateResponse = await prodClient.put('/sponsor', updateData);
+    const updateResponse = await prodClient.put('/sponsor/profile', updateData);
     logger.info('Profile updated successfully:', updateResponse.data);
   } catch (error) {
     logger.error('Update profile failed:', error.message);
@@ -180,11 +182,13 @@ async function runTests() {
   // Test 6: Get All Sponsors (Admin only)
   logger.info('Testing get all sponsors...');
   try {
-    const response = await prodClient.get('/sponsor');
+    const response = await prodClient.get('/sponsor/all');
     logger.info('All sponsors retrieved successfully:', response.data);
   } catch (error) {
     logger.error('Get all sponsors failed:', error.message);
   }
+
+  logger.info('All tests completed');
 }
 
 // Run the tests

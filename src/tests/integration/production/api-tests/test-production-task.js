@@ -1,54 +1,67 @@
 const axios = require('axios');
 const winston = require('winston');
+const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
+const chalk = require('chalk');
 
-// Configure logger
+// Load environment variables from .env.test
+dotenv.config({ path: '.env.test' });
+
+// Create a test logger with custom format
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.simple()
+    winston.format.colorize(),
+    winston.format.printf(({ level, message, ...metadata }) => {
+      let msg = `${level}: ${message}`;
+      if (Object.keys(metadata).length > 0) {
+        msg += ` ${JSON.stringify(metadata)}`;
+      }
+      return msg;
     })
-  ]
+  ),
+  transports: [new winston.transports.Console()]
 });
 
-// Configure axios client
-const api = axios.create({
-  baseURL: 'https://portal-jb-backend-production.up.railway.app/api',
-  timeout: 60000,  // Increased to 60 seconds
-  withCredentials: true,
+// Production API configuration
+const PROD_BASE_URL = 'https://portal-jb-backend-production.up.railway.app/api';
+const prodClient = axios.create({
+  baseURL: PROD_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Add response interceptor for logging
-api.interceptors.response.use(
+// Add response interceptor for better error logging
+prodClient.interceptors.response.use(
   response => response,
   error => {
-    if (error.code === 'ETIMEDOUT') {
-      logger.error('Request timed out. Please check if the server is running and accessible.');
-    } else if (error.code === 'ECONNREFUSED') {
-      logger.error('Connection refused. The server might be down or not accepting connections.');
-    } else {
+    if (error.response) {
       logger.error('API Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-        data: error.response?.data,
-        code: error.code,
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          timeout: error.config?.timeout
-        }
+        status: error.response.status,
+        data: error.response.data,
+        url: error.response.config.url,
+        method: error.response.config.method,
+        headers: error.response.headers
       });
+    } else if (error.request) {
+      logger.error('No response received:', {
+        method: error.request.method,
+        url: error.request.url,
+        headers: error.request.headers
+      });
+    } else {
+      logger.error('Error setting up request:', error.message);
     }
     return Promise.reject(error);
   }
 );
+
+// Generate JWT token for testing
+const generateAuthToken = (user) => {
+  const AUTH_SECRET = process.env.AUTH_SECRET || 'development_auth_secret';
+  return jwt.sign(user, AUTH_SECRET, { expiresIn: '1h' });
+};
 
 // Sample sponsor data for registration
 const sampleSponsor = {
@@ -85,141 +98,155 @@ const sampleTask = {
   submissions: []
 };
 
-async function runTests() {
+// Sample submission data
+const sampleSubmission = {
+  id: 'test_submission_' + Date.now(),
+  taskId: '', // Will be set when creating submission
+  walletAddress: '0x' + '2'.repeat(40),
+  submissionLinks: ['https://example.com/submission'],
+  submissionTime: new Date().toISOString(),
+  status: 'pending',
+  isAccepted: false
+};
+
+async function runTest(name, testFn) {
   try {
-    // Test 1: Health Check
-    logger.info('Running Health Check...');
-    const healthResponse = await api.get('/health');
-    logger.info('Health Check Response:', healthResponse.data);
+    console.log(chalk.blue(`\nRunning ${name}...`));
+    await testFn();
+    console.log(chalk.green(`✓ ${name} passed`));
+    return true;
+  } catch (error) {
+    console.log(chalk.red(`✗ ${name} failed: ${error.message}`));
+    if (error.response?.data) {
+      console.log(chalk.yellow('Error details:'), error.response.data);
+    }
+    return false;
+  }
+}
 
-    // Test 2: Register Sponsor
-    logger.info('Running Register Sponsor Test...');
-    let sponsorAuthToken;
+async function runTests() {
+  console.log(chalk.cyan('\n=== Starting Task API Tests ===\n'));
+  let allTestsPassed = true;
+
+  // Test 1: Health Check
+  allTestsPassed &= await runTest('Health Check', async () => {
+    const healthResponse = await prodClient.get('/health');
+    console.log(chalk.gray('Response:'), healthResponse.data);
+  });
+
+  // Test 2: Register Sponsor
+  allTestsPassed &= await runTest('Register Sponsor', async () => {
     try {
-      const registerResponse = await api.post('/sponsor/register', sampleSponsor);
-      logger.info('Register Sponsor Response:', registerResponse.data);
-
-      // Login sponsor
-      const loginResponse = await api.post('/sponsor/login', {
-        wallet: sampleSponsor.profile.walletAddress
-      });
-      logger.info('Full Login Response:', {
-        data: loginResponse.data,
-        headers: loginResponse.headers,
-        status: loginResponse.status
-      });
-
-      // Extract session token from Set-Cookie header
-      const setCookieHeader = loginResponse.headers['set-cookie'];
-      if (setCookieHeader) {
-        const sessionTokenCookie = setCookieHeader.find(cookie => cookie.startsWith('next-auth.session-token='));
-        if (sessionTokenCookie) {
-          const sessionToken = sessionTokenCookie.split(';')[0];
-          // Set the cookie for subsequent requests
-          api.defaults.headers.common['Cookie'] = sessionToken;
-          logger.info('Session token cookie set:', sessionToken);
-        } else {
-          logger.error('Session token cookie not found in Set-Cookie header');
-        }
-      } else {
-        logger.error('Set-Cookie header not found in response');
-      }
+      const registerResponse = await prodClient.post('/sponsor/register', sampleSponsor);
+      console.log(chalk.gray('Response:'), registerResponse.data);
     } catch (error) {
       if (error.response?.status === 400 && error.response?.data?.message?.includes('already exists')) {
-        logger.info('Sponsor already exists, proceeding with login');
-        const loginResponse = await api.post('/sponsor/login', {
-          wallet: sampleSponsor.profile.walletAddress
-        });
-        logger.info('Full Login Response:', {
-          data: loginResponse.data,
-          headers: loginResponse.headers,
-          status: loginResponse.status
-        });
-
-        // Extract session token from Set-Cookie header
-        const setCookieHeader = loginResponse.headers['set-cookie'];
-        if (setCookieHeader) {
-          const sessionTokenCookie = setCookieHeader.find(cookie => cookie.startsWith('next-auth.session-token='));
-          if (sessionTokenCookie) {
-            const sessionToken = sessionTokenCookie.split(';')[0];
-            // Set the cookie for subsequent requests
-            api.defaults.headers.common['Cookie'] = sessionToken;
-            logger.info('Session token cookie set:', sessionToken);
-          } else {
-            logger.error('Session token cookie not found in Set-Cookie header');
-          }
-        } else {
-          logger.error('Set-Cookie header not found in response');
-        }
+        console.log(chalk.yellow('Sponsor already exists, proceeding with login'));
       } else {
         throw error;
       }
     }
+  });
 
-    // Test 3: Create Task
-    logger.info('Running Create Task Test...');
-    let createdTaskId;
+  // Login sponsor
+  allTestsPassed &= await runTest('Sponsor Login', async () => {
+    const loginResponse = await prodClient.post('/sponsor/login', {
+      wallet: sampleSponsor.profile.walletAddress
+    });
+    console.log(chalk.gray('Response:'), loginResponse.data);
+  });
+
+  // Generate auth token for the sponsor
+  const sponsorToken = generateAuthToken({
+    id: sampleSponsor.profile.walletAddress,
+    role: 'sponsor',
+    permissions: ['read:profile', 'update:profile', 'delete:profile', 'create:task', 'update:task', 'delete:task', 'read:tasks', 'read:submissions', 'review:submission']
+  });
+
+  // Set auth header for subsequent requests
+  prodClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
+
+  // Test 3: Create First Task (for deletion test)
+  let firstTask;
+  allTestsPassed &= await runTest('Create First Task', async () => {
+    const createResponse = await prodClient.post('/task/create', {
+      task: { ...sampleTask, title: 'First Test Task' }
+    });
+    firstTask = createResponse.data.task;
+    console.log(chalk.gray('Response:'), createResponse.data);
+  });
+
+  // Test 4: Create Second Task (for submission test)
+  let secondTask;
+  allTestsPassed &= await runTest('Create Second Task', async () => {
+    const createResponse = await prodClient.post('/task/create', {
+      task: { ...sampleTask, title: 'Second Test Task' }
+    });
+    secondTask = createResponse.data.task;
+    console.log(chalk.gray('Response:'), createResponse.data);
+  });
+
+  // Test 5: Create Submission for Second Task
+  allTestsPassed &= await runTest('Create Submission', async () => {
+    const submissionData = {
+      ...sampleSubmission,
+      taskId: secondTask.id
+    };
+    const createResponse = await prodClient.post('/submission/create', {
+      submission: submissionData
+    });
+    console.log(chalk.gray('Response:'), createResponse.data);
+  });
+
+  // Test 6: Try to Delete Task with Submissions (Should Fail)
+  allTestsPassed &= await runTest('Attempt to Delete Task with Submissions', async () => {
     try {
-      const createResponse = await api.post('/task/create', { task: sampleTask });
-      logger.info('Create Task Response:', createResponse.data);
-      createdTaskId = createResponse.data.task.id;
-
-      // Verify sponsor's taskIds
-      logger.info('Verifying sponsor taskIds...');
-      const sponsorResponse = await api.get('/sponsor', {
-        headers: {
-          Authorization: `Bearer ${api.defaults.headers.common.Cookie.split('=')[1]}`
-        }
-      });
-      logger.info('Sponsor Data After Task Creation:', sponsorResponse.data);
+      await prodClient.delete(`/task/${secondTask.id}`);
+      throw new Error('Task deletion should have failed');
     } catch (error) {
-      logger.error('Create Task Error:', error.response?.data || error.message);
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('Cannot delete task with existing submissions')) {
+        console.log(chalk.gray('Expected error received:'), error.response.data);
+        return true;
+      }
       throw error;
     }
+  });
 
-    // Test 4: Get All Tasks
-    logger.info('Running Get All Tasks Test...');
-    const getAllResponse = await api.post('/task/fetch', { ids: ['*'] });
-    logger.info('Get All Tasks Response:', getAllResponse.data);
+  // Test 7: Delete First Task (Should Succeed)
+  allTestsPassed &= await runTest('Delete First Task', async () => {
+    const deleteResponse = await prodClient.delete(`/task/${firstTask.id}`);
+    console.log(chalk.gray('Response:'), deleteResponse.data);
+  });
 
-    // Test 5: Get Task by ID
-    if (createdTaskId) {
-      logger.info('Running Get Task by ID Test...');
-      const getByIdResponse = await api.post('/task/fetch', { ids: [createdTaskId] });
-      logger.info('Get Task by ID Response:', getByIdResponse.data);
-
-      // Test 6: Update Task
-      logger.info('Running Update Task Test...');
-      const updateData = {
-        task: {
-          id: createdTaskId,
-          title: 'Updated Test Task',
-          description: 'Updated test description'
-        }
-      };
-      const updateResponse = await api.put('/task/update', updateData);
-      logger.info('Update Task Response:', updateResponse.data);
-
-      // Test 7: Delete Task
-      logger.info('Running Delete Task Test...');
-      const deleteResponse = await api.delete('/task', {
-        data: { id: createdTaskId }
-      });
-      logger.info('Delete Task Response:', deleteResponse.data);
-
-      // Verify sponsor's taskIds after deletion
-      logger.info('Verifying sponsor taskIds after deletion...');
-      const sponsorResponseAfterDelete = await api.get('/sponsor', {
-        headers: { Authorization: `Bearer ${api.defaults.headers.common.Cookie.split('=')[1]}` }
-      });
-      logger.info('Sponsor Data After Task Deletion:', sponsorResponseAfterDelete.data);
+  // Test 8: Verify Task IDs in Sponsor Profile
+  allTestsPassed &= await runTest('Verify Task IDs in Sponsor Profile', async () => {
+    const sponsorResponse = await prodClient.get('/sponsor/profile');
+    const taskIds = sponsorResponse.data.sponsor.taskIds;
+    
+    // First task should be removed
+    if (taskIds.includes(firstTask.id)) {
+      throw new Error('First task ID still exists in sponsor profile');
     }
+    
+    // Second task should still exist
+    if (!taskIds.includes(secondTask.id)) {
+      throw new Error('Second task ID missing from sponsor profile');
+    }
+    
+    console.log(chalk.gray('Sponsor task IDs:'), taskIds);
+  });
 
-    logger.info('All tests completed');
-  } catch (error) {
-    logger.error('Test execution failed:', error);
+  console.log(chalk.cyan('\n=== Test Summary ==='));
+  if (allTestsPassed) {
+    console.log(chalk.green('✓ All tests passed successfully!'));
+  } else {
+    console.log(chalk.red('✗ Some tests failed. Check the logs above for details.'));
     process.exit(1);
   }
 }
 
-runTests(); 
+// Run the tests
+runTests().catch(error => {
+  console.error('Test execution failed:', error);
+  process.exit(1);
+}); 

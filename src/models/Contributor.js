@@ -43,11 +43,13 @@ const contributorSchema = new mongoose.Schema({
   skills: {
     primarySkills: [{
       name: { type: String },
-      level: { type: String }
+      level: { type: String },
+      skillId: { type: String, ref: 'Skill' }
     }],
     secondarySkills: [{
       name: { type: String },
-      level: { type: String }
+      level: { type: String },
+      skillId: { type: String, ref: 'Skill' }
     }],
     skillTrajectory: {
       improvementRate: { type: Number, default: 0 },
