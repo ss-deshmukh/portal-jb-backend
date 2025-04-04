@@ -188,13 +188,33 @@ DELETE /api/task/:id
 ```
 
 Deletes a task. Requires sponsor authentication. The task ID is provided as a route parameter.
+Tasks with existing submissions cannot be deleted.
 
-**Response:**
+**Response (Success):**
 ```json
 {
-  "message": "Task deleted successfully"
+  "message": "Task deleted successfully",
+  "details": {
+    "taskId": "string"
+  }
 }
 ```
+
+**Response (Task has submissions):**
+```json
+{
+  "message": "Cannot delete task with existing submissions",
+  "details": {
+    "taskId": "string",
+    "submissionCount": number
+  }
+}
+```
+
+**Error Responses:**
+- `400` - Task has existing submissions
+- `403` - Unauthorized (task belongs to another sponsor)
+- `404` - Task not found
 
 ## Submission Table
 

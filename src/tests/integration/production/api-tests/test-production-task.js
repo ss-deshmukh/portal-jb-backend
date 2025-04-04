@@ -163,6 +163,13 @@ async function runTests() {
     permissions: ['read:profile', 'update:profile', 'delete:profile', 'create:task', 'update:task', 'delete:task', 'read:tasks', 'read:submissions', 'review:submission']
   });
 
+  // Generate auth token for the contributor
+  const contributorToken = generateAuthToken({
+    id: sampleSubmission.walletAddress,
+    role: 'contributor',
+    permissions: ['create:submission', 'read:submission', 'update:submission', 'delete:submission']
+  });
+
   // Set auth header for subsequent requests
   prodClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
 
@@ -188,14 +195,20 @@ async function runTests() {
 
   // Test 5: Create Submission for Second Task
   allTestsPassed &= await runTest('Create Submission', async () => {
+    // Switch to contributor token for submission creation
+    prodClient.defaults.headers.common['Authorization'] = `Bearer ${contributorToken}`;
+    
     const submissionData = {
       ...sampleSubmission,
       taskId: secondTask.id
     };
-    const createResponse = await prodClient.post('/submission/create', {
+    const createResponse = await prodClient.post('/submission', {
       submission: submissionData
     });
     console.log(chalk.gray('Response:'), createResponse.data);
+    
+    // Switch back to sponsor token
+    prodClient.defaults.headers.common['Authorization'] = `Bearer ${sponsorToken}`;
   });
 
   // Test 6: Try to Delete Task with Submissions (Should Fail)
