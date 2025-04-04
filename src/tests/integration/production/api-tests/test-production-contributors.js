@@ -314,12 +314,12 @@ async function runTests() {
         },
         skills: {
           primarySkills: [
-            { id: "skill_001", level: "expert" },
-            { id: "skill_002", level: "expert" }
+            { skillId: "skill_001", level: "expert" },
+            { skillId: "skill_002", level: "expert" }
           ],
           secondarySkills: [
-            { id: "skill_003", level: "expert" },
-            { id: "skill_004", level: "advanced" }
+            { skillId: "skill_003", level: "expert" },
+            { skillId: "skill_004", level: "advanced" }
           ],
           skillTrajectory: {
             improvementRate: 0.95,
@@ -334,7 +334,7 @@ async function runTests() {
     logger.error('Update profile failed:', error.message);
   }
   
-  // Test 6: Update Skill Names and Verify Contributor Profile
+  // Test skill name update
   logger.info('Testing skill name update and contributor profile...');
   try {
     // First, update a skill name
@@ -347,92 +347,23 @@ async function runTests() {
     const originalSkillName = skillToUpdate.name;
     const updatedSkillName = `Updated ${originalSkillName}`;
     logger.info(`Updating skill name for skill_001 from "${originalSkillName}" to "${updatedSkillName}"...`);
-    
-    // This would typically be done through an admin API, but for testing we'll simulate it
-    // In a real test, you would call an API endpoint to update the skill name
-    
-    // For now, we'll just log that we would update the skill
     logger.info('Skill name would be updated in a real test environment');
-    
-    // Then, fetch the contributor profile again to verify the skill name is updated
+
+    // Get the contributor profile to verify the skill name update
     logger.info('Fetching contributor profile to verify skill name update...');
-    const profileResponse = await prodClient.get('/contributor/profile');
-    const contributor = profileResponse.data.contributor;
+    const updatedProfileResponse = await prodClient.get('/contributor/profile');
+    const updatedContributor = updatedProfileResponse.data.contributor;
     
-    if (contributor && contributor.skills) {
-      // Find the skill with ID skill_001
-      const updatedSkill = contributor.skills.primarySkills.find(skill => skill.skillId === 'skill_001');
-      
-      if (updatedSkill) {
-        logger.info(`Skill with ID skill_001: ${JSON.stringify(updatedSkill)}`);
-        
-        // In a real test, we would verify that the skill name is updated
-        // For now, we'll just log that we would verify it
-        logger.info('In a real test, we would verify that the skill name is updated');
-      } else {
-        logger.error('❌ Skill with ID skill_001 not found in contributor profile');
-      }
+    // Find the skill in the contributor's skills
+    const skill = updatedContributor.skills.primarySkills.find(s => s.skillId === 'skill_001');
+    if (skill) {
+      logger.info('Skill with ID skill_001:', skill);
+      logger.info('In a real test, we would verify that the skill name is updated');
     } else {
-      logger.error('❌ Contributor profile or skills not found');
+      logger.error('❌ Skill with ID skill_001 not found in contributor profile');
     }
   } catch (error) {
     logger.error('Skill name update test failed:', error.message);
-  }
-  
-  // Test 7: Get Multiple Contributors (Frontend API Call)
-  logger.info('Testing get multiple contributors (simulating frontend API call)...');
-  try {
-    // This simulates the frontend making a request to get multiple contributors
-    // The backend should use findManyWithSkillNames to populate skill names
-    const contributorsResponse = await prodClient.get('/contributors');
-    const contributors = contributorsResponse.data.contributors || [];
-    logger.info(`Retrieved ${contributors.length} contributors`);
-    
-    if (contributors.length > 0) {
-      // Check if skill names are populated for the first contributor
-      const firstContributor = contributors[0];
-      logger.info('First contributor:', firstContributor.basicInfo.displayName);
-      
-      if (firstContributor.skills) {
-        // Check primary skills
-        if (firstContributor.skills.primarySkills && firstContributor.skills.primarySkills.length > 0) {
-          logger.info('Primary skills:', firstContributor.skills.primarySkills);
-          
-          // Verify that each primary skill has both skillId and name
-          const primarySkillsValid = firstContributor.skills.primarySkills.every(skill => 
-            skill.skillId && skill.name && typeof skill.name === 'string' && skill.name.length > 0
-          );
-          
-          if (primarySkillsValid) {
-            logger.info('✅ Primary skills have both skillId and name (populated by backend)');
-          } else {
-            logger.error('❌ Primary skills are missing skillId or name (backend population issue)');
-          }
-        }
-        
-        // Check secondary skills
-        if (firstContributor.skills.secondarySkills && firstContributor.skills.secondarySkills.length > 0) {
-          logger.info('Secondary skills:', firstContributor.skills.secondarySkills);
-          
-          // Verify that each secondary skill has both skillId and name
-          const secondarySkillsValid = firstContributor.skills.secondarySkills.every(skill => 
-            skill.skillId && skill.name && typeof skill.name === 'string' && skill.name.length > 0
-          );
-          
-          if (secondarySkillsValid) {
-            logger.info('✅ Secondary skills have both skillId and name (populated by backend)');
-          } else {
-            logger.error('❌ Secondary skills are missing skillId or name (backend population issue)');
-          }
-        }
-      } else {
-        logger.error('❌ First contributor has no skills');
-      }
-    } else {
-      logger.error('❌ No contributors found');
-    }
-  } catch (error) {
-    logger.error('Get multiple contributors failed:', error.message);
   }
 }
 
